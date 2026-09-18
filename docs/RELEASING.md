@@ -52,3 +52,5 @@ bash scripts/package-release.sh
 Public mode refuses to package an app unless its signature contains a Developer ID Application authority. When a notary profile is provided, the script submits the app archive to Apple, waits for the result, staples the ticket, validates it and creates the final ZIP plus checksum.
 
 Before creating a GitHub release, verify the extracted app on a clean Mac, confirm Gatekeeper accepts it, exercise normal click-through and drawing, and record the tested macOS version, architecture and display setup. Upload the final ZIP and matching `.sha256` file together.
+
+The bundled `Resources/AppIcon.icns` is copied into every app build and referenced by `CFBundleIconFile`. Keep the high-resolution `Resources/AppIcon.png` as the editable master. If the artwork changes, regenerate every standard macOS icon size and rebuild the `.icns` file before packaging.

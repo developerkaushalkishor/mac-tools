@@ -1,12 +1,42 @@
-# ScreenInk
+<p align="center">
+  <img src="docs/assets/screenink-app-icon.png" width="160" height="160" alt="ScreenInk app icon">
+</p>
 
-**Draw over your Mac screen with a small, offline annotation tool.**
+<h1 align="center">ScreenInk</h1>
+
+<p align="center"><strong>Draw over your Mac screen with a small, offline annotation tool.</strong></p>
+
+<p align="center">
+  <a href="docs/INSTALLATION.md">Install</a> ·
+  <a href="docs/USAGE.md">Usage</a> ·
+  <a href="CONTRIBUTING.md">Contribute</a> ·
+  <a href="docs/RELEASING.md">Release</a> ·
+  <a href="docs/PLAN.md">Roadmap</a>
+</p>
 
 ScreenInk is a native macOS menu-bar app built with Swift, AppKit and Core Graphics. Use it to mark up code, explain an idea or point out details during a presentation. The project is MIT-licensed, and contributions are welcome.
 
-> **Early prototype · 0.15.0** — Build from source today. There is no published installer or notarized binary release yet. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
+> **Early prototype · 0.15.1** — Build from source today. There is no published installer or notarized binary release yet. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
 
-[Install](docs/INSTALLATION.md) · [Usage](docs/USAGE.md) · [Contribute](CONTRIBUTING.md) · [Release](docs/RELEASING.md) · [Roadmap](docs/PLAN.md) · [Report a bug](https://github.com/developerkaushalkishor/mac-tools/issues/new/choose)
+[Report a bug](https://github.com/developerkaushalkishor/mac-tools/issues/new/choose)
+
+## Visual overview
+
+```mermaid
+flowchart LR
+    A[Normal Mac apps] -->|Choose a tool| B[ScreenInk overlay]
+    B --> C[Pen and Highlighter]
+    B --> D[Shapes and Text]
+    B --> E[Boards and Selection]
+    B --> F[Laser, Halo and Click effects]
+    C --> G[Escape or right-click]
+    D --> G
+    E --> G
+    F --> G
+    G -->|Return to normal input| A
+```
+
+The purple fountain-pen icon represents drawing directly over a screen. ScreenInk remains a menu-bar utility, so the app icon appears in Finder and Applications while the compact nib icon remains in the macOS menu bar.
 
 ## Features available now
 
@@ -50,6 +80,12 @@ bash scripts/run.sh
 The last command builds and opens `dist/ScreenInk.app`. For subsequent launches, open that app in Finder without rebuilding. No paid Apple Developer membership is needed for this local build.
 
 See the [installation guide](docs/INSTALLATION.md) for installing to Applications, updating, alternate Xcode locations and troubleshooting. Build scripts locally ad-hoc sign the app; this is not Developer ID signing or notarization.
+
+## Can a non-developer install it?
+
+Not through a simple trusted download yet. GitHub currently contains the source code, not a published notarized application release. A developer can clone and build ScreenInk with Xcode. A non-developer should wait for a GitHub Release containing a Developer ID-signed and Apple-notarized ZIP; otherwise macOS Gatekeeper may warn or block the app. Do not disable Gatekeeper globally to install ScreenInk.
+
+The release workflow and remaining requirements are documented in [RELEASING.md](docs/RELEASING.md). The app includes its own macOS icon, but an icon alone does not provide signing or notarization.
 
 ## Basic use
 

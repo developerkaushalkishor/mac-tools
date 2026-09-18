@@ -9,6 +9,7 @@ APP_DIR="$PROJECT_DIR/dist/ScreenInk.app"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 cp "$BIN_DIR/ScreenInk" "$APP_DIR/Contents/MacOS/ScreenInk"
 cp Resources/Info.plist "$APP_DIR/Contents/Info.plist"
+cp Resources/AppIcon.icns "$APP_DIR/Contents/Resources/AppIcon.icns"
 SIGNING_IDENTITY="${SCREENINK_SIGNING_IDENTITY:--}"
 /usr/bin/codesign --force --sign "$SIGNING_IDENTITY" "$APP_DIR"
 if [[ "$SIGNING_IDENTITY" == "-" ]]; then

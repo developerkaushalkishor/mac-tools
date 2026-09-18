@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-09-19. ScreenInk is an early 0.15.0 prototype, distributed as source.
+Last reviewed: 2026-09-19. ScreenInk is an early 0.15.1 prototype, distributed as source.
 
 ## Repository
 
@@ -22,6 +22,7 @@ The repository is public at https://github.com/developerkaushalkishor/mac-tools.
 - Framed whiteboards and blackboards scoped to the current display, all displays or a custom region.
 - On-demand full-display and region screenshots with Retina PNG save and clipboard output.
 - Top-center icon toolbar, saved draggable placement, reset, manual hide, auto-hide and top-edge reveal.
+- Original purple macOS application icon bundled at standard and Retina sizes.
 
 See [usage](docs/USAGE.md) for the exact behavior and [roadmap](docs/PLAN.md) for future work.
 
@@ -57,6 +58,8 @@ Added optional Click Animations as the first Milestone 8 feature. A left click i
 ## Milestone 9 — Public binary distribution — 2026-09-19
 
 Added reproducible versioned ZIP and SHA-256 packaging for local release candidates. The packaging script verifies the app signature and archive integrity, optionally submits through an existing `notarytool` keychain profile, staples the notarization ticket and refuses public mode without a Developer ID Application signature. The documented workflow keeps Apple credentials outside Git. A real public binary remains pending until a Developer ID identity is installed and the notarized artifact passes clean-Mac installation checks.
+
+Version 0.15.1 adds an original ScreenInk macOS application icon with a purple screen, fountain-pen nib and ink trail. The transparent high-resolution master is converted into a standard multi-resolution `.icns`, copied into the app bundle and declared through `CFBundleIconFile`. Documentation now makes clear that GitHub's source ZIP is not an installable non-developer release.
 
 ### Group selection and board contents — 0.9.0
 

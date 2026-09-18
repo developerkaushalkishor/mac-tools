@@ -1,5 +1,11 @@
 # Install and update ScreenInk
 
+## For non-developers
+
+There is no published notarized GitHub Release yet, so the repository's green **Code → Download ZIP** button downloads source code rather than an installable application. Wait for a release that provides a `ScreenInk-<version>-macOS-<architecture>.zip` file plus its `.sha256` checksum. That public artifact must be Developer ID-signed, Apple-notarized and verified on a clean Mac before this guide recommends installing it.
+
+The steps below are currently for developers or users comfortable building from source. Do not disable Gatekeeper globally or run quarantine-removal commands copied from issue comments.
+
 ## Requirements
 
 - macOS 14+ is the declared deployment target. The current validated build environment is Apple Silicon, macOS 26.6.2, Xcode 27 and Swift 6.4. Other supported-by-declaration OS/toolchain combinations and Intel need verification.
@@ -46,7 +52,7 @@ Alternatively, `bash scripts/run.sh` builds and opens the app in one command. Fi
 
 To keep the app independently of your source checkout, quit ScreenInk and use Finder to copy `dist/ScreenInk.app` into your user Applications folder (`~/Applications`) or the system Applications folder. Create the user Applications folder if needed. If an older copy exists, replace it deliberately after quitting it. Launch the copied app rather than retaining multiple running copies.
 
-The local build is ad-hoc signed. There is no downloadable installer, Homebrew formula or notarized release provided by this project yet. Maintainers can create a local test archive or follow the guarded Developer ID/notarization workflow in [RELEASING.md](RELEASING.md). Do not disable Gatekeeper globally. If macOS reports a blocked or damaged app, record the exact message, confirm the source and rebuild locally before reporting the issue.
+The local build is ad-hoc signed and includes the ScreenInk application icon. There is no downloadable installer, Homebrew formula or notarized release provided by this project yet. Maintainers can create a local test archive or follow the guarded Developer ID/notarization workflow in [RELEASING.md](RELEASING.md). Do not disable Gatekeeper globally. If macOS reports a blocked or damaged app, record the exact message, confirm the source and rebuild locally before reporting the issue.
 
 ## 4. Use and update
 
