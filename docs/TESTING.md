@@ -13,7 +13,7 @@ Model regressions cover restoring a cleared canvas, invalidating redo after a ne
 
 ## Desktop smoke checklist
 
-- [ ] Launch app; toolbar and Ink menu appear; underlying apps remain clickable by default.
+- [ ] Launch app; toolbar and ScreenInk menu-bar icon appear; underlying apps remain clickable by default.
 - [ ] Click the pen icon; draw a line, curve and single dot. All appear under the mouse.
 - [ ] Change color/width; existing strokes keep their original appearance.
 - [ ] Undo and redo a stroke; clear then undo restores the drawing.

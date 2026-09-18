@@ -1,12 +1,12 @@
 # ScreenInk implementation plan
 
-Prepared: 2026-09-18. Goal: a personal, offline macOS annotation utility inspired by Epic Pen and Presentify. Build the smallest usable version first, then ship one incremental feature after real use.
+Prepared: 2026-09-18. Goal: an MIT-licensed, offline macOS annotation utility inspired by Epic Pen and Presentify. Build the smallest usable version first, then ship one incremental feature after real use.
 
 ## Scope and sequencing
 
 | Milestone | Deliverable | Acceptance gate | Estimated additional effort |
 | --- | --- | --- | --- |
-| 0 — Setup and starter | Swift package, app bundle, pen, six colors, width, normal mode, undo/redo, clear, menu and toolbar | Build/tests pass; complete desktop smoke checks before calling it daily-use ready | Initial setup in this task; 0.5–2 days for hands-on feedback/fixes |
+| 0 — Setup and starter | Swift package, app bundle, pen, six colors, width, normal mode, undo/redo, clear, menu and toolbar | Build/tests pass; complete desktop smoke checks before calling it daily-use ready | Implemented; allow time for hands-on feedback/fixes |
 | 1 — Essential drawing | Whole-stroke eraser, highlighter, 24-color palette, saved preferences | Erasing restores via undo; highlighter does not turn opaque on self-overlap; restart retains settings | 1–2 days |
 | 2 — Presentation controls | Fading ink with delay, cursor halo, show/hide ink, configurable global toggle | Fade uses elapsed time; ordinary clicks work; shortcuts do not steal common app shortcuts; idle CPU stays low | 1–2 days |
 | 3 — Shapes | Line, arrow, rectangle and ellipse; Shift constraints | Correct previews in each drag direction; undo/redo and colors work consistently | 1–2 days |
@@ -15,11 +15,11 @@ Prepared: 2026-09-18. Goal: a personal, offline macOS annotation utility inspire
 | 6 — Screenshots | Full display and region capture, PNG save, clipboard | Correct Retina output; toolbar excluded but ink included; denied permission handled | 1–2 days |
 | 7 — Reliability | One overlay per display, fullscreen/Spaces matrix, display reconnect, performance and packaging | Manual compatibility checklist passes on actual hardware | 3–5 days |
 | 8 — Optional Presentify extras | Click animations, spotlight, zoom | User confirms extras after using the core app; zoom feedback loop avoided | Re-estimate separately |
-| 9 — Optional commercial release | Stable identity, Developer ID/notarization, updates, activation/deactivation and device limits | Release and licence failure/recovery tests pass | Re-estimate separately; roughly 1–3+ weeks |
+| 9 — Public binary distribution | Stable identity, Developer ID/notarization and documented release/update process | Install and update smoke checks pass on a clean Mac | Re-estimate when distribution is scoped |
 
 These are planning ranges for focused implementation, not promises. Milestones 1–6 total approximately 6.5–12 days after the starter; reliability and first-time learning add time. The initial 2–4 week stable-app target remains a reasonable planning window, subject to hands-on findings.
 
-Licence management stays in the roadmap but is deferred for personal use, where every feature is unlocked. “Great value” is a product goal, not a code feature. No backend until paid distribution actually requires one.
+ScreenInk is MIT-licensed. There is no planned activation server, subscription gate or per-device licence management for this open-source app. The software licence and Apple signing/notarization are separate concerns. “Great value” is a product goal, not a code feature.
 
 ## Development loop
 
@@ -30,7 +30,7 @@ Licence management stays in the roadmap but is deferred for personal use, where 
 5. Implement and test the behavior, including interactions with existing tools.
 6. Use that build before starting the next feature.
 
-Do not implement the complete roadmap in one pass. Initial next task: validate the starter with the user, then add the stroke eraser.
+Do not implement the complete roadmap in one pass. Initial next task: validate the starter during real use, then add the stroke eraser.
 
 ## Architecture and extension points
 

@@ -1,60 +1,51 @@
-# Your first native Mac app
+# Developer guide: your first native Mac app
 
-## Environment observed on 2026-09-18
+Start with the [installation guide](INSTALLATION.md) to get a working build. Swift is the programming language; AppKit provides native Mac windows and controls; Core Graphics renders strokes. Swift Package Manager organizes the targets and builds the executable.
 
-- macOS 26.6.2 (build 25G83).
-- Apple Silicon / arm64.
-- Apple Swift 6.4.
-- Selected developer directory: `/Library/Developer/CommandLineTools`.
-- Full Xcode 27.0 (27A266a) was installed during setup at `/Applications/Xcode.app`.
-- The user accepted the Xcode agreement; first-launch setup completed.
-- Optional iOS/watchOS/tvOS/visionOS simulator downloads were left off.
-- No external-agent integration is required for this project.
-- Project scripts select full Xcode using `DEVELOPER_DIR`; the system-wide developer directory remains unchanged.
+## Open the source
 
-Command Line Tools include the compiler and SDK used by this starter. Full Xcode is Apple's IDE: it adds a visual debugger, project interface and profiling tools. It is recommended for learning and later development, but the starter can be built with the installed tooling.
+### Xcode
 
-## First launch
+Choose File → Open and select `Package.swift` inside your checkout. Xcode recognizes the Swift package; there is no `.xcodeproj`. Select the ScreenInk executable scheme and your Mac to debug. The package executable is a development target; `bash scripts/build.sh` creates the full `.app` bundle with its menu-bar metadata. Use that bundle for everyday usage checks.
 
-Open Terminal and run:
+### VS Code
+
+Open the repository folder with File → Open Folder. You can read/edit code and review Git changes immediately. Swift-aware completion and debugging require the official Swift extension and a compatible toolchain. This repository does not install editor extensions. The terminal scripts remain the documented build/test path if your debugger configuration is not ready.
+
+The checked-in `.vscode/launch.json` is an optional convenience for the Swift extension, not a substitute for installing the compiler or a guaranteed debugger setup on every machine.
+
+## Follow the data flow
+
+1. `Sources/ScreenInk/main.swift` starts the application and its event loop.
+2. `AppDelegate.swift` owns windows, toolbar actions and input mode.
+3. `CanvasView.swift` turns mouse down/drag/up into a stroke and renders it.
+4. `Sources/InkCore/StrokeStore.swift` stores completed strokes and undo/redo history.
+5. `ToolbarViews.swift` supplies icon buttons, the drag handle and vector menu-bar icon.
+6. `Sources/InkCore/ToolbarVisibility.swift` decides visibility from pointer activity and elapsed time.
+
+Drawing mode makes the overlay receive mouse events. Normal mode sets the overlay to ignore those events so other apps can receive clicks. The toolbar remains a separate native panel.
+
+## Build and test
+
+From the checkout root:
 
 ```bash
-cd /Volumes/T7/workspace/mac-tools
-bash scripts/run.sh
+bash scripts/doctor.sh
+bash scripts/test.sh
+bash scripts/build.sh
+open dist/ScreenInk.app
 ```
 
-The script compiles Swift, creates `dist/ScreenInk.app`, signs it locally, then opens it. A `.app` is a folder bundle containing the executable and metadata, presented by Finder as an application.
+Scripts select the complete Xcode installation at `/Applications/Xcode.app` when available, unless you already supplied `DEVELOPER_DIR`. They do not change the system-wide toolchain selection.
 
-Look for the top-center icon toolbar and the pen-and-ink icon in the macOS menu bar. No Dock icon is expected. Click the pen tool to draw; press Escape to return to normal clicks. Use the menu-bar icon > Quit ScreenInk to exit. Quit before rebuilding. Reopening the running app shows its toolbar but does not replace the running code.
+Quit the running app before rebuilding. Reopening a running copy shows its toolbar but does not reload the executable. Keep build success, model-test success and desktop verification separate in your report.
 
-If no toolbar is visible, hover at the top-center edge or use the pen-and-ink menu-bar icon > Show Toolbar. If no icon exists, try opening `dist/ScreenInk.app` and capture any actual error message. Do not disable Gatekeeper or global macOS security settings to troubleshoot.
+## A first small exercise
 
-## Xcode setup reference
+Change a palette color in `AppDelegate.swift`, rebuild, and observe it. Then read the test that restores a cleared drawing. Before changing undo/redo behavior, describe the user-visible scenario and add a regression test for it. UI layout, drawing state and app packaging solve different parts of the application.
 
-1. Download Xcode using [Apple's Xcode resources](https://developer.apple.com/xcode/resources/).
-2. Open it once and complete its first-launch setup. System installation prompts require your action.
-3. Open this project's `Package.swift` in Xcode. There is no `.xcodeproj` yet: this is an intentional Swift Package setup.
-4. For daily use, continue using `scripts/run.sh` to create the complete app bundle. Xcode's package executable run is a development/debugging path.
+## Packaging and permissions
 
-Do not change the system-wide selected developer directory unless Xcode or a build actually requires it. Xcode was installed with the user's authorization. No paid enrollment or security bypass was performed.
+`Resources/Info.plist` describes the app identity and menu-bar behavior. The build script places the executable inside `dist/ScreenInk.app` and ad-hoc signs that bundle. Public binary distribution will need its own signing/notarization workflow; no credentials are included here.
 
-## What to learn first
-
-Follow the working app in this order:
-
-1. `main.swift`: starts the app and its event loop.
-2. `AppDelegate.swift`: creates windows, toolbar buttons and menu actions.
-3. `CanvasView.mouseDown/mouseDragged/mouseUp`: turns a drag into points.
-4. `StrokeStore.append`: saves a completed stroke and its undo state.
-5. `CanvasView.draw`: renders those points as a line.
-6. `setDrawing`: switches between drawing and clicking underlying apps.
-
-First small exercise: change one color in the palette, rebuild, and see the result. Then inspect the test that restores a cleared drawing. UI code, drawing state and packaging solve different parts of the same app.
-
-## Permissions and distribution
-
-The starter does not capture the screen or monitor global keyboard input. Later screenshot work will add Screen Recording permission at the moment of use. Shortcut/cursor implementation must be audited for any Accessibility/Input Monitoring requirement rather than requesting everything in advance.
-
-Local ad-hoc signing is not a public release identity. Sharing a polished app introduces Developer ID signing, notarization and a distribution decision. Those steps and any associated enrollment costs are deferred.
-
-Keep the T7 drive mounted while building/running from this project. The generated app can later be copied to Applications when a stable build is ready.
+The current prototype does not capture screen content or monitor global keyboard input. Future capture or shortcut work must evaluate permission requirements at implementation time.
