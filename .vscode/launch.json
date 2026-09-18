@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:mac-tools}",
+            "name": "Debug ScreenInk",
+            "target": "ScreenInk",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug ScreenInk"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:mac-tools}",
+            "name": "Release ScreenInk",
+            "target": "ScreenInk",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release ScreenInk"
+        }
+    ]
+}
