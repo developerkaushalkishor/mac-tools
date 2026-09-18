@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-09-19. ScreenInk is an early 0.5.2 prototype, distributed as source.
+Last reviewed: 2026-09-19. ScreenInk is an early 0.15.0 prototype, distributed as source.
 
 ## Repository
 
@@ -12,8 +12,15 @@ The repository is public at https://github.com/developerkaushalkishor/mac-tools.
 - Undo/redo and clear, with recoverable clear history.
 - Drawing/normal mode and menu-bar controls.
 - Fading ink, temporary laser pointer, smooth cursor halo, temporary ink visibility and configurable global drawing shortcut.
+- Optional cross-app click animations with a smooth expanding ripple.
 - Line, arrow, rounded rectangle, ellipse and diamond tools with Shift constraints and Pen shape recognition.
-- Placeable and editable colored text with four font sizes.
+- Placeable and editable colored text with four sizes, six saved font styles and three alignments.
+- Individual and marquee-group selection, recoloring, movement and resizing for all saved annotations.
+- Frame-only board selection with contained annotations following board movement and resizing.
+- Start-aware board drawing containment that prevents inside gestures from crossing the frame.
+- Tool-specific cursors for every interactive drawing tool.
+- Framed whiteboards and blackboards scoped to the current display, all displays or a custom region.
+- On-demand full-display and region screenshots with Retina PNG save and clipboard output.
 - Top-center icon toolbar, saved draggable placement, reset, manual hide, auto-hide and top-edge reveal.
 
 See [usage](docs/USAGE.md) for the exact behavior and [roadmap](docs/PLAN.md) for future work.
@@ -22,7 +29,7 @@ See [usage](docs/USAGE.md) for the exact behavior and [roadmap](docs/PLAN.md) fo
 
 | Check | Recorded result |
 | --- | --- |
-| Swift Testing suite | 30 tests passed: text placement/edit/history/hit-testing, pen-shape recognition, rounded shape geometry, shapes/constraints, history/fading, progressive laser decay/lifecycle, eraser hit-testing, toolbar visibility/geometry, display registry and native AppKit canvas checks |
+| Swift Testing suite | 49 tests passed: click-animation lifetime/history isolation, long-session fading-ink cleanup and point sampling, screenshot region/coordinate/PNG behavior, text alignment geometry and multi-text changes, typography catalog and multi-text font changes, immediate tool-cursor activation, start-aware board drawing containment, group selection/color/movement, contained board transforms, universal annotation transforms, board scope/region/history behavior, text placement/edit/history/hit-testing, pen-shape recognition, rounded shape geometry, shapes/constraints, history/fading, progressive laser decay/lifecycle, eraser hit-testing, toolbar visibility/geometry, display registry and native AppKit canvas checks |
 | Release build | Passed with Xcode 27 / Swift 6.4 on Apple Silicon, macOS 26.6.2 |
 | Bundle signature | Local ad-hoc signature verification passed |
 | Fresh GitHub clone at `217e1a7` | Doctor, seven tests, release build and signature verification passed from a separate temporary checkout on the same Mac |
@@ -37,7 +44,47 @@ Automated model tests do not establish desktop compatibility. Use the [manual ch
 
 ## Current limitations and next work
 
-Ink is stored only in memory; quitting loses drawings. Each connected screen has a canvas; the toolbar selects the target for Undo/Redo/Clear. There is no screenshot/export yet. Next work is hands-on validation of Milestone 4 before starting boards.
+Ink is stored only in memory; quitting loses drawings. Each connected screen has a canvas and independent history. Screenshot capture remains experimental because the Screen Recording permission path still fails on the current test Mac. Milestone 7 compatibility checks and the Developer ID/notarization gate for Milestone 9 remain pending; Spotlight and zoom are deferred optional work.
+
+## Milestone 7 — Reliability — 2026-09-19
+
+Started long-session reliability work. Pen and Highlighter now discard sub-point mouse samples that add no visible movement while preserving the exact gesture endpoint. Fully faded ink is removed from the live canvas and every Undo/Redo snapshot, preventing invisible temporary annotations from accumulating for the lifetime of the app. Deterministic tests cover both retention paths; fullscreen, Spaces, physical display reconnect and extended performance checks remain hands-on acceptance items.
+
+## Milestone 8 — Presentify extras — 2026-09-19
+
+Added optional Click Animations as the first Milestone 8 feature. A left click in ScreenInk or another app produces a cyan center flash and expanding ease-out ring on the correct display without entering drawing history or blocking the original click. The toolbar and menu-bar controls persist the preference, animation tracking runs at 60 FPS only while enabled, and ripple storage is capped and expires after half a second.
+
+## Milestone 9 — Public binary distribution — 2026-09-19
+
+Added reproducible versioned ZIP and SHA-256 packaging for local release candidates. The packaging script verifies the app signature and archive integrity, optionally submits through an existing `notarytool` keychain profile, staples the notarization ticket and refuses public mode without a Developer ID Application signature. The documented workflow keeps Apple credentials outside Git. A real public binary remains pending until a Developer ID identity is installed and the notarized artifact passes clean-Mac installation checks.
+
+### Group selection and board contents — 0.9.0
+
+Select now supports a drag marquee for choosing several annotations, group movement and proportional corner resizing. Choosing any quick or palette color recolors the current single or multiple selection in one Undo step. Boards are selectable only from their visible frame, leaving the interior available for exact annotation clicks and marquee selection. Moving or resizing a selected board transforms annotations whose centers were inside the board when the gesture started; outside annotations remain unchanged. Automated native event tests cover group recoloring/movement, frame-only board selection and contained annotation movement.
+
+Drawing containment now follows the gesture's starting location. Pen, Highlighter, Laser and shape gestures that begin on a board's writable interior are clamped inside that surface, including a stroke-width margin that keeps rendered ink away from the frame. Gestures that begin outside the board remain free to use the complete screen canvas.
+
+Fixed tool cursor activation for non-activating overlay panels. Selecting a drawing tool now installs its custom macOS cursor immediately without depending on the canvas becoming the key window, cursor updates reassert the selected icon, and returning to Normal mode restores the arrow cursor.
+
+### Teaching typography — 0.10.0
+
+Added a visual font picker with three clear teaching styles (System Rounded, Avenir Next and Helvetica Neue) and three handwriting styles (Chalkboard, Noteworthy and Marker Felt). The choice is saved for future text, used by both the inline editor and rendered annotation, and can be applied to one or several selected text annotations in one Undo step. These fonts are native macOS families with a safe system-font fallback, so the app gains no font-download, network or third-party licensing dependency. The selection follows Exa-reviewed accessibility guidance favoring legible sans-serif text for instructions while reserving decorative handwriting for short annotations.
+
+### Text placement calibration — 0.10.1
+
+Choosing any font now always activates Text mode, including when Text was the remembered tool but ScreenInk was in Normal mode. The canvas immediately uses the native I-beam cursor. The inline editor begins exactly at the clicked annotation origin, previews the chosen typeface and color, and uses a short high-contrast “Type here…” placeholder; Return/Escape guidance moved to the tooltip and accessibility help so it cannot overflow the field.
+
+### Text alignment — 0.11.0
+
+Added Left, Center and Right alignment controls beside the font picker. Each text annotation stores its alignment and treats its placement point as the matching left edge, center anchor or right edge, so alignment visibly changes without requiring an artificial text box. The current alignment is saved for future text. With Select active, the same control updates one or several selected text annotations in one Undo step while preserving the selection and ignoring non-text elements.
+
+## Milestone 6 — Screenshots — 2026-09-19
+
+Added a Screenshot picker with four actions: copy the toolbar display, copy a dragged region, save the toolbar display as PNG and save a dragged region as PNG. Captures use ScreenCaptureKit only after a user action, preserve Retina resolution, include ScreenInk canvas ink and boards, hide the pointer, and exclude the ScreenInk toolbar window through a display content filter. Region selection uses a dimmed crosshair overlay and converts AppKit's bottom-left canvas coordinates into ScreenCaptureKit display coordinates. Permission denial produces an actionable macOS Settings message; successful file actions use a native Save panel. Automated tests cover region input, coordinate conversion and PNG encoding without triggering Screen Recording permission; hands-on permission and pixel-output checks remain pending.
+
+### 0.12.1 screenshot permission fix
+
+ScreenInk now lets ScreenCaptureKit attempt capture after requesting access instead of stopping on the immediate Core Graphics request result. If macOS still denies access, the alert opens the Screen Recording privacy pane directly and explains the required app restart. This did not resolve capture on the current test Mac, so screenshot support remains experimental and requires further diagnosis.
 
 ## Multi-display fix — 2026-09-18
 
@@ -102,3 +149,27 @@ Replaced the ambiguous Pen toggle with separate Cursor and Pen controls. Cursor 
 ### Toolbar reveal animation — 0.5.2
 
 Every hidden-to-visible toolbar transition now uses a 220-millisecond ease-out animation, combining a 12-point downward slide from the top with an opacity fade. Repeated visibility checks do not restart the animation, while launch, top-edge reveal and the Show Toolbar command share the same presentation path.
+
+### Text editing and annotation transforms — 0.6.0
+
+Improved the inline text editor with a clear placeholder, larger high-contrast field, reliable focus and content-aware horizontal sizing. Added a dedicated Select tool with visual bounds and handles for moving and resizing lines, arrows, closed shapes and text. Shape transforms use stable logical bounds independent of the hand-drawn wobble; text scales proportionally between 12 and 120 points. Each completed drag creates one Undo step, with native AppKit and core geometry regression coverage.
+
+### Tool-specific cursors — 0.6.1
+
+Drawing mode now displays a distinct high-contrast cursor for Pen, Highlighter, Eraser, Laser, Select and every shape tool. Each custom cursor includes the selected tool symbol and a centered action point; Text uses the native I-beam. Cursor rectangles refresh immediately when the active tool changes, while Normal mode returns pointer ownership to the underlying application.
+
+## Milestone 5 — Whiteboard and Blackboard — 2026-09-19
+
+Added a Board picker for the transparent live screen, an off-white board and a near-black board. Background selection applies to every connected display and never mutates annotation history, so strokes and predictable Undo/Redo survive every switch. Board activation enters drawing mode, and exact white or dark-gray ink automatically changes to a readable contrasting color on the matching board. Automated coverage verifies annotations and Undo history remain intact; hands-on fullscreen and multi-display visual checks remain pending.
+
+### Selective framed boards — 0.7.1
+
+Expanded the Board picker with Current Display, All Displays and Region scopes. Region mode uses a crosshair drag to place a board within one display, while each display retains its own board state. Based on Exa research into premium physical boards, Whiteboard uses a slim aluminum gradient and floating shadow, while Blackboard uses a wider warm-wood frame with restrained grain; both include rounded corners and an integrated tray. The frames are native Core Graphics vectors rather than downloaded artwork, preserving Retina sharpness and avoiding external asset licensing. Native tests verify a custom region changes only its chosen canvas.
+
+### Popover auto-hide and reveal-position fix — 0.7.2
+
+Open Palette, Shapes and Board popovers now count as active toolbar interaction, preventing auto-hide while the pointer is choosing a sub-tool. The reveal slide moved from the toolbar window coordinates to a temporary Core Animation transform on its internal visual layer. Fade and motion remain, but the saved window origin never changes, eliminating interrupted-animation drift and top-edge/menu-bar overlap.
+
+### Universal annotation and board transforms — 0.8.0
+
+Select now considers every stored annotation, including Pen and Highlighter freehand strokes, and resolves overlapping content from topmost to bottommost at the exact click point. Freehand resizing applies an affine transform to every sampled point and scales stroke width while preserving color and opacity. If no annotation is hit, the active board can be selected, moved or resized with four handles and display-bound clamping. Native event tests cover freehand and board selection independently, while core tests verify freehand geometry and appearance survive resizing.

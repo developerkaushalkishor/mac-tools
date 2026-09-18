@@ -46,7 +46,7 @@ Alternatively, `bash scripts/run.sh` builds and opens the app in one command. Fi
 
 To keep the app independently of your source checkout, quit ScreenInk and use Finder to copy `dist/ScreenInk.app` into your user Applications folder (`~/Applications`) or the system Applications folder. Create the user Applications folder if needed. If an older copy exists, replace it deliberately after quitting it. Launch the copied app rather than retaining multiple running copies.
 
-The local build is ad-hoc signed. There is no downloadable installer, Homebrew formula or notarized release provided by this project yet. Do not disable Gatekeeper globally. If macOS reports a blocked or damaged app, record the exact message, confirm the source and rebuild locally before reporting the issue.
+The local build is ad-hoc signed. There is no downloadable installer, Homebrew formula or notarized release provided by this project yet. Maintainers can create a local test archive or follow the guarded Developer ID/notarization workflow in [RELEASING.md](RELEASING.md). Do not disable Gatekeeper globally. If macOS reports a blocked or damaged app, record the exact message, confirm the source and rebuild locally before reporting the issue.
 
 ## 4. Use and update
 
@@ -75,9 +75,10 @@ If `git status` shows changes, preserve your work before pulling. If the pull ca
 | Drawing intercepts ordinary clicks | Press Escape or choose Toggle Drawing; manual Hide Toolbar also exits drawing mode |
 | Toolbar saved on a missing display | Use menu icon → Reset Toolbar to Top Center |
 | Old behavior after rebuilding | Quit the existing process and reopen the freshly built app; check for an older Applications copy |
+| Screenshot remains unavailable | Screenshot support is experimental. Record the exact macOS permission state and error; other annotation tools remain usable without Screen Recording access |
 | App is unresponsive | Quit ScreenInk using Activity Monitor; unsaved annotations will be lost |
 
-The current app does not implement screen capture or global keyboard monitoring. Do not grant broad privacy permissions as a generic troubleshooting step.
+ScreenInk requests Screen Recording permission only when you use its experimental screenshot tool. The permission flow is not yet reliable on the current test Mac. Do not grant Accessibility or other broad privacy permissions as generic troubleshooting steps.
 
 ## Uninstall
 

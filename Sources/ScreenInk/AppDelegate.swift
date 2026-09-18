@@ -1,6 +1,7 @@
 import AppKit
 import InkCore
 import QuartzCore
+import UniformTypeIdentifiers
 
 @MainActor
 final class InkPanel: NSPanel {
@@ -15,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var toolbar: ToolbarPanel!
     private var statusItem: NSStatusItem!
     private var normalButton: NSButton!
+    private var selectionButton: NSButton!
     private var modeButton: NSButton!
     private var highlighterButton: NSButton!
     private var eraserButton: NSButton!
@@ -22,16 +24,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var shapeButton: NSButton!
     private var textButton: NSButton!
     private var fontSizeButton: NSButton!
+    private var fontButton: NSButton!
+    private var textAlignmentButton: NSButton!
+    private var screenshotButton: NSButton!
     private var paletteButton: NSButton!
     private var fadingButton: NSButton!
     private var haloButton: NSButton!
+    private var clickAnimationButton: NSButton!
     private var inkVisibilityButton: NSButton!
+    private var boardButton: NSButton!
     private let palettePopover = NSPopover()
     private let shapePopover = NSPopover()
+    private let boardPopover = NSPopover()
+    private let fontPopover = NSPopover()
+    private let textAlignmentPopover = NSPopover()
+    private let screenshotPopover = NSPopover()
     private var autoHideButton: NSButton!
     private var autoHideItem: NSMenuItem!
     private var swatches: [ColorButton] = []
     private var paletteSwatches: [ColorButton] = []
+    private var boardStyleButtons: [NSButton] = []
+    private var boardScopeButtons: [NSButton] = []
     private let colors: [UInt32] = [
         0xBF5AF2, 0xFF453A, 0xFFD60A, 0x30D158, 0x0A84FF, 0xFFFFFF,
         0xFF9F0A, 0xFF375F, 0x64D2FF, 0x5E5CE6, 0xAC8E68, 0x8E8E93,
@@ -41,15 +54,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var drawing = false
     private var widthIndex = 1
     private var fontSizeIndex = 1
+    private var selectedFontStyleID = TextFontCatalog.defaultID
+    private var selectedTextAlignment: InkTextAlignment = .left
+    private var pendingScreenshotDestination: ScreenshotDestination?
     private var selectedTool: DrawingTool = .pen
     private var fadingInkEnabled = false
     private var fadeDelay: Double = 5
     private var cursorHaloEnabled = false
+    private var clickAnimationsEnabled = false
     private var inkVisible = true
+    private var boardScope: BoardScope = .currentDisplay
     private var shortcutChoice = HotKeyChoice.choices[2]
     private var hotKey: GlobalHotKey?
     private var visibility = ToolbarVisibility(now: ProcessInfo.processInfo.systemUptime)
     private var timer: Timer?
+    private var globalClickMonitor: Any?
+    private var localClickMonitor: Any?
     private var autoHide: Bool {
         get { UserDefaults.standard.object(forKey: "toolbarAutoHide") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "toolbarAutoHide") }
@@ -67,6 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         hotKey?.register(shortcutChoice)
         visibility.show(now: now)
         configurePointerTimer()
+        configureClickMonitors()
         NotificationCenter.default.addObserver(self, selector: #selector(displayChanged),
             name: NSApplication.didChangeScreenParametersNotification, object: nil)
     }
@@ -113,6 +134,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         normalButton = icon("cursorarrow", "Normal mode — interact with apps (Escape or right-click)",
             #selector(selectNormal))
         row.addArrangedSubview(normalButton)
+        selectionButton = icon("rectangle.dashed", "Select — move or resize shapes and text",
+            #selector(selectAnnotations))
+        row.addArrangedSubview(selectionButton)
         modeButton = icon("pencil.tip", "Pen — draw permanent ink", #selector(selectPen))
         row.addArrangedSubview(modeButton)
         highlighterButton = icon("highlighter", "Highlighter — broad translucent ink", #selector(selectHighlighter))
@@ -154,6 +178,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             "Text size: \(Int([20, 28, 40, 56][fontSizeIndex])) pt — click to cycle",
             #selector(changeFontSize(_:)))
         row.addArrangedSubview(fontSizeButton)
+        fontButton = icon("character.cursor.ibeam", "Choose text font", #selector(showFonts(_:)))
+        row.addArrangedSubview(fontButton)
+        createFontPicker()
+        textAlignmentButton = icon("text.alignleft", "Text alignment", #selector(showTextAlignment(_:)))
+        row.addArrangedSubview(textAlignmentButton)
+        createTextAlignmentPicker()
         row.addArrangedSubview(icon("arrow.uturn.backward", "Undo on toolbar display", #selector(undo)))
         row.addArrangedSubview(icon("arrow.uturn.forward", "Redo on toolbar display", #selector(redo)))
         row.addArrangedSubview(icon("trash", "Clear drawing on toolbar display", #selector(clear)))
@@ -162,8 +192,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         row.addArrangedSubview(fadingButton)
         haloButton = icon("cursorarrow.rays", "Toggle cursor halo", #selector(toggleCursorHalo))
         row.addArrangedSubview(haloButton)
+        clickAnimationButton = icon("cursorarrow.click.2", "Toggle click animations",
+            #selector(toggleClickAnimations))
+        row.addArrangedSubview(clickAnimationButton)
         inkVisibilityButton = icon("eye.slash", "Show / hide ink", #selector(toggleInkVisibility))
         row.addArrangedSubview(inkVisibilityButton)
+        boardButton = icon("rectangle.inset.filled", "Background: Screen / Whiteboard / Blackboard",
+            #selector(showBoards(_:)))
+        boardButton.setAccessibilityValue("Screen")
+        row.addArrangedSubview(boardButton)
+        createBoardPicker()
+        screenshotButton = icon("camera.viewfinder", "Capture screenshot", #selector(showScreenshots(_:)))
+        row.addArrangedSubview(screenshotButton)
+        createScreenshotPicker()
         divider(in: row)
         autoHideButton = icon("eye", "Toggle auto-hide (2 seconds)", #selector(toggleAutoHide))
         row.addArrangedSubview(autoHideButton)
@@ -223,6 +264,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let haloItem = NSMenuItem(title: "Cursor Halo", action: #selector(toggleCursorHalo), keyEquivalent: "")
         haloItem.target = self
         menu.addItem(haloItem)
+        let clickItem = NSMenuItem(title: "Click Animations", action: #selector(toggleClickAnimations),
+            keyEquivalent: "")
+        clickItem.target = self
+        menu.addItem(clickItem)
         let shortcutMenu = NSMenu(title: "Global Shortcut")
         for choice in HotKeyChoice.choices {
             let item = NSMenuItem(title: choice.title, action: #selector(changeShortcut(_:)), keyEquivalent: "")
@@ -312,6 +357,142 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         shapePopover.behavior = .transient
     }
 
+    private func createFontPicker() {
+        let controller = NSViewController()
+        let stack = NSStackView()
+        stack.orientation = .vertical
+        stack.spacing = 5
+        stack.alignment = .leading
+        for (index, style) in TextFontCatalog.styles.enumerated() {
+            let button = NSButton(title: style.displayName, target: self,
+                action: #selector(changeFont(_:)))
+            button.tag = index
+            button.bezelStyle = .recessed
+            button.alignment = .left
+            button.font = style.font(size: 17)
+            button.toolTip = "\(style.category): \(style.displayName)"
+            button.setAccessibilityLabel("\(style.displayName), \(style.category) font")
+            button.widthAnchor.constraint(equalToConstant: 210).isActive = true
+            button.heightAnchor.constraint(equalToConstant: 34).isActive = true
+            stack.addArrangedSubview(button)
+        }
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 234, height: 246))
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+            stack.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        controller.view = container
+        controller.preferredContentSize = container.frame.size
+        fontPopover.contentViewController = controller
+        fontPopover.behavior = .transient
+    }
+
+    private func createTextAlignmentPicker() {
+        let controller = NSViewController()
+        let row = NSStackView()
+        row.orientation = .horizontal
+        row.spacing = 6
+        let choices: [(String, String, InkTextAlignment)] = [
+            ("text.alignleft", "Align left", .left),
+            ("text.aligncenter", "Align center", .center),
+            ("text.alignright", "Align right", .right)
+        ]
+        for (index, choice) in choices.enumerated() {
+            let button = icon(choice.0, choice.1, #selector(changeTextAlignment(_:)))
+            button.tag = index
+            row.addArrangedSubview(button)
+        }
+        row.translatesAutoresizingMaskIntoConstraints = false
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 142, height: 54))
+        container.addSubview(row)
+        NSLayoutConstraint.activate([
+            row.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            row.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        controller.view = container
+        controller.preferredContentSize = container.frame.size
+        textAlignmentPopover.contentViewController = controller
+        textAlignmentPopover.behavior = .transient
+    }
+
+    private func createScreenshotPicker() {
+        let controller = NSViewController()
+        let grid = NSGridView()
+        grid.rowSpacing = 6
+        grid.columnSpacing = 6
+        grid.addRow(with: [
+            icon("display", "Copy full display", #selector(copyFullScreenshot)),
+            icon("rectangle.dashed", "Copy selected region", #selector(copyRegionScreenshot))
+        ])
+        grid.addRow(with: [
+            icon("square.and.arrow.down", "Save full display as PNG", #selector(saveFullScreenshot)),
+            icon("crop", "Save selected region as PNG", #selector(saveRegionScreenshot))
+        ])
+        grid.translatesAutoresizingMaskIntoConstraints = false
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 112, height: 104))
+        container.addSubview(grid)
+        NSLayoutConstraint.activate([
+            grid.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            grid.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        controller.view = container
+        controller.preferredContentSize = container.frame.size
+        screenshotPopover.contentViewController = controller
+        screenshotPopover.behavior = .transient
+    }
+
+    private func createBoardPicker() {
+        let controller = NSViewController()
+        let stack = NSStackView()
+        stack.orientation = .vertical
+        stack.spacing = 8
+        stack.alignment = .centerX
+        let styleRow = NSStackView()
+        styleRow.orientation = .horizontal
+        styleRow.spacing = 6
+        let choices: [(String, String, BoardStyle)] = [
+            ("display", "Show screen", .screen),
+            ("rectangle.fill", "Whiteboard", .whiteboard),
+            ("rectangle.inset.filled", "Blackboard", .blackboard)
+        ]
+        for (symbol, label, style) in choices {
+            let button = icon(symbol, label, #selector(changeBoardStyle(_:)))
+            button.tag = style.rawValue
+            boardStyleButtons.append(button)
+            styleRow.addArrangedSubview(button)
+        }
+        let scopeRow = NSStackView()
+        scopeRow.orientation = .horizontal
+        scopeRow.spacing = 6
+        let scopes: [(String, String, BoardScope)] = [
+            ("display", "Current display", .currentDisplay),
+            ("rectangle.3.group", "All displays", .allDisplays),
+            ("rectangle.dashed", "Drag a custom region", .region)
+        ]
+        for (symbol, label, scope) in scopes {
+            let button = icon(symbol, label, #selector(changeBoardScope(_:)))
+            button.tag = scope.rawValue
+            boardScopeButtons.append(button)
+            scopeRow.addArrangedSubview(button)
+        }
+        stack.addArrangedSubview(styleRow)
+        stack.addArrangedSubview(scopeRow)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 142, height: 94))
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        controller.view = container
+        controller.preferredContentSize = container.frame.size
+        boardPopover.contentViewController = controller
+        boardPopover.behavior = .transient
+    }
+
     private func color(_ hex: UInt32) -> NSColor {
         NSColor(srgbRed: CGFloat((hex >> 16) & 255) / 255,
             green: CGFloat((hex >> 8) & 255) / 255, blue: CGFloat(hex & 255) / 255, alpha: 1)
@@ -323,6 +504,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let detached = displays.reconcile(ids: screens.map(\.inkDisplayID)) { id in
             let display = DisplayCanvas(screen: screenByID[id]!)
             display.canvas.onEscape = { [weak self] in self?.setDrawing(false) }
+            display.canvas.onBoardChanged = { [weak self] in self?.updateBoardControls() }
+            display.canvas.onScreenshotRegionSelected = { [weak self, weak display] region in
+                guard let self, let display, let destination = self.pendingScreenshotDestination else { return }
+                self.pendingScreenshotDestination = nil
+                self.captureScreenshot(from: display, region: region, destination: destination)
+            }
             return display
         }
         for display in detached {
@@ -334,6 +521,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             display.canvas.color = selectedColor
             display.canvas.penWidth = [2, 4, 8][widthIndex]
             display.canvas.fontSize = [20, 28, 40, 56][fontSizeIndex]
+            display.canvas.fontStyleID = selectedFontStyleID
+            display.canvas.textAlignment = selectedTextAlignment
             display.canvas.tool = selectedTool
             display.canvas.fadingInkEnabled = fadingInkEnabled
             display.canvas.fadeDelay = fadeDelay
@@ -386,8 +575,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             }
         }
         let wasVisible = visibility.isVisible
-        visibility.update(now: now, toolbarHovered: toolbar.frame.insetBy(dx: -8, dy: -8).contains(pointer),
-            topEdgeHovered: atTopEdge(pointer), interacting: NSEvent.pressedMouseButtons != 0, autoHide: autoHide)
+        let popoverActive = palettePopover.isShown || shapePopover.isShown || boardPopover.isShown
+            || fontPopover.isShown || textAlignmentPopover.isShown || screenshotPopover.isShown
+        visibility.update(now: now,
+            toolbarHovered: toolbar.frame.insetBy(dx: -8, dy: -8).contains(pointer) || popoverActive,
+            topEdgeHovered: atTopEdge(pointer),
+            interacting: NSEvent.pressedMouseButtons != 0 || popoverActive, autoHide: autoHide)
         // A visible toolbar must also follow an edge request on another display.
         // The old transition-only path left it stranded on the previous display.
         if visibility.isVisible {
@@ -396,6 +589,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                screen.inkDisplayID != toolbar.screen?.inkDisplayID {
                 toolbar.setFrameOrigin(centeredOrigin(on: screen))
                 savePosition()
+                updateBoardControls()
                 moved = true
             }
             if !wasVisible || !toolbar.isVisible {
@@ -404,6 +598,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 toolbar.orderFrontRegardless()
             }
         } else if toolbar.isVisible {
+            toolbar.contentView?.layer?.removeAnimation(forKey: "toolbarRevealSlide")
             toolbar.alphaValue = 1
             toolbar.orderOut(nil)
         }
@@ -415,15 +610,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             toolbar.orderFrontRegardless()
             return
         }
-        let finalOrigin = toolbar.frame.origin
         toolbar.alphaValue = 0
-        toolbar.setFrameOrigin(NSPoint(x: finalOrigin.x, y: finalOrigin.y + 12))
         toolbar.orderFrontRegardless()
+        if let layer = toolbar.contentView?.layer {
+            layer.removeAnimation(forKey: "toolbarRevealSlide")
+            let slide = CABasicAnimation(keyPath: "transform.translation.y")
+            slide.fromValue = 10
+            slide.toValue = 0
+            slide.duration = 0.22
+            slide.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            layer.add(slide, forKey: "toolbarRevealSlide")
+        }
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.22
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             toolbar.animator().alphaValue = 1
-            toolbar.animator().setFrameOrigin(finalOrigin)
         }
     }
 
@@ -432,6 +633,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // Manual hiding also releases input so the user can immediately return to work.
         if drawing { setDrawing(false) }
         visibility.hide(topEdgeHovered: atTopEdge(NSEvent.mouseLocation))
+        toolbar.contentView?.layer?.removeAnimation(forKey: "toolbarRevealSlide")
         toolbar.alphaValue = 1
         toolbar.orderOut(nil)
     }
@@ -442,6 +644,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         autoHideButton?.setAccessibilityValue(autoHide ? "On" : "Off")
     }
     @objc private func selectNormal() { setDrawing(false) }
+    @objc private func selectAnnotations() { selectTool(.select) }
     @objc private func selectPen() { selectTool(.pen) }
     @objc private func toggleDrawingState() { setDrawing(!drawing) }
     @objc private func selectHighlighter() { selectTool(.highlighter) }
@@ -469,6 +672,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     private func updateToolControls() {
         normalButton?.contentTintColor = drawing ? .white : .systemCyan
+        selectionButton?.contentTintColor = drawing && selectedTool == .select ? .systemCyan : .white
         modeButton?.contentTintColor = drawing && selectedTool == .pen ? .systemCyan : .white
         highlighterButton?.contentTintColor = drawing && selectedTool == .highlighter ? .systemYellow : .white
         eraserButton?.contentTintColor = drawing && selectedTool == .eraser ? .systemCyan : .white
@@ -479,6 +683,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     @objc private func showPalette(_ sender: NSButton) {
         palettePopover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+    }
+    @objc private func showBoards(_ sender: NSButton) {
+        updateBoardControls()
+        boardPopover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+    }
+    @objc private func changeBoardScope(_ sender: NSButton) {
+        guard let scope = BoardScope(rawValue: sender.tag) else { return }
+        boardScope = scope
+        updateBoardControls()
+    }
+    @objc private func changeBoardStyle(_ sender: NSButton) {
+        guard let style = BoardStyle(rawValue: sender.tag) else { return }
+        boardPopover.close()
+        if style == .whiteboard, selectedColor == 0xFFFFFF { applyColor(at: 23) }
+        if style == .blackboard, selectedColor == 0x1C1C1E { applyColor(at: 5) }
+        if boardScope == .allDisplays {
+            for display in displays.activeValues { display.canvas.setBoard(style) }
+        } else if let display = actionDisplay {
+            if boardScope == .region, style != .screen {
+                setDrawing(true)
+                display.canvas.beginBoardRegionSelection(style)
+            } else {
+                display.canvas.setBoard(style)
+            }
+        }
+        if style != .screen, boardScope != .region { setDrawing(true) }
+        updateBoardControls()
+    }
+    private func updateBoardControls() {
+        let style = actionDisplay?.canvas.boardStyle ?? .screen
+        for button in boardStyleButtons {
+            button.contentTintColor = button.tag == style.rawValue ? .systemCyan : .white
+        }
+        for button in boardScopeButtons {
+            button.contentTintColor = button.tag == boardScope.rawValue ? .systemCyan : .white
+        }
+        boardButton?.contentTintColor = style == .screen ? .white : .systemCyan
+        let name = style == .screen ? "Screen" : (style == .whiteboard ? "Whiteboard" : "Blackboard")
+        let region = actionDisplay?.canvas.boardRegion == nil ? "full display" : "custom region"
+        boardButton?.setAccessibilityValue(style == .screen ? name : "\(name), \(region)")
     }
     @objc private func changePaletteColor(_ sender: NSButton) {
         applyColor(at: sender.tag)
@@ -492,6 +736,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         selectedColor = colors[index]
         UserDefaults.standard.set(Int(selectedColor), forKey: "inkColor")
         for display in displays.activeValues { display.canvas.color = selectedColor }
+        _ = actionDisplay?.canvas.applyColorToSelection(selectedColor)
         for (quickIndex, button) in swatches.enumerated() { button.selected = quickIndex == index }
         for (paletteIndex, button) in paletteSwatches.enumerated() { button.selected = paletteIndex == index }
         if selectedTool == .eraser { selectTool(.pen) }
@@ -512,6 +757,116 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let label = "Text size: \(Int(sizes[fontSizeIndex])) pt — click to cycle"
         sender.toolTip = label
         sender.setAccessibilityLabel(label)
+    }
+    @objc private func showFonts(_ sender: NSButton) {
+        fontPopover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+    }
+    @objc private func changeFont(_ sender: NSButton) {
+        guard TextFontCatalog.styles.indices.contains(sender.tag) else { return }
+        let style = TextFontCatalog.styles[sender.tag]
+        selectedFontStyleID = style.id
+        UserDefaults.standard.set(style.id, forKey: "fontStyleID")
+        for display in displays.activeValues { display.canvas.fontStyleID = style.id }
+        _ = actionDisplay?.canvas.applyFontToSelection(style.id)
+        let label = "Text font: \(style.displayName)"
+        fontButton.toolTip = label
+        fontButton.setAccessibilityLabel(label)
+        fontPopover.close()
+        selectTool(.text)
+    }
+    @objc private func showTextAlignment(_ sender: NSButton) {
+        textAlignmentPopover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+    }
+    @objc private func changeTextAlignment(_ sender: NSButton) {
+        let alignments: [InkTextAlignment] = [.left, .center, .right]
+        guard alignments.indices.contains(sender.tag) else { return }
+        let alignment = alignments[sender.tag]
+        selectedTextAlignment = alignment
+        UserDefaults.standard.set(alignment.rawValue, forKey: "textAlignment")
+        for display in displays.activeValues { display.canvas.textAlignment = alignment }
+        _ = actionDisplay?.canvas.applyTextAlignmentToSelection(alignment)
+        let name = alignment.rawValue.capitalized
+        let label = "Text alignment: \(name)"
+        textAlignmentButton.image = NSImage(systemSymbolName: "text.align\(alignment.rawValue)",
+            accessibilityDescription: label)
+        textAlignmentButton.toolTip = label
+        textAlignmentButton.setAccessibilityLabel(label)
+        textAlignmentPopover.close()
+    }
+    @objc private func showScreenshots(_ sender: NSButton) {
+        screenshotPopover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+    }
+    @objc private func copyFullScreenshot() { startFullScreenshot(destination: .clipboard) }
+    @objc private func saveFullScreenshot() { startFullScreenshot(destination: .pngFile) }
+    @objc private func copyRegionScreenshot() { startRegionScreenshot(destination: .clipboard) }
+    @objc private func saveRegionScreenshot() { startRegionScreenshot(destination: .pngFile) }
+
+    private func startFullScreenshot(destination: ScreenshotDestination) {
+        screenshotPopover.close()
+        guard let display = actionDisplay else { return }
+        captureScreenshot(from: display, region: nil, destination: destination)
+    }
+
+    private func startRegionScreenshot(destination: ScreenshotDestination) {
+        screenshotPopover.close()
+        guard let display = actionDisplay else { return }
+        pendingScreenshotDestination = destination
+        setDrawing(true)
+        display.canvas.beginScreenshotRegionSelection()
+    }
+
+    private func captureScreenshot(from display: DisplayCanvas, region: CGRect?,
+        destination: ScreenshotDestination) {
+        guard let screen = display.window.screen else { return }
+        let excludedWindows = Set([toolbar.windowNumber])
+        Task { @MainActor [weak self] in
+            do {
+                try? await Task.sleep(for: .milliseconds(120))
+                let image = try await ScreenshotService.capture(screen: screen, region: region,
+                    excludingWindowNumbers: excludedWindows)
+                switch destination {
+                case .clipboard:
+                    ScreenshotService.copyToClipboard(image)
+                    self?.screenshotButton.toolTip = "Screenshot copied to clipboard"
+                case .pngFile:
+                    try self?.saveScreenshot(image)
+                }
+            } catch {
+                self?.showScreenshotError(error)
+            }
+        }
+    }
+
+    private func saveScreenshot(_ image: CGImage) throws {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd 'at' HH.mm.ss"
+        let panel = NSSavePanel()
+        panel.title = "Save ScreenInk Screenshot"
+        panel.nameFieldStringValue = "ScreenInk \(formatter.string(from: Date())).png"
+        panel.allowedContentTypes = [.png]
+        panel.canCreateDirectories = true
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try ScreenshotService.pngData(for: image).write(to: url, options: .atomic)
+    }
+
+    private func showScreenshotError(_ error: Error) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Screenshot unavailable"
+        alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        if let screenshotError = error as? ScreenshotError,
+            screenshotError.requiresScreenRecordingPermission {
+            alert.addButton(withTitle: "Open Screen Recording Settings")
+            alert.addButton(withTitle: "Not Now")
+            if alert.runModal() == .alertFirstButtonReturn,
+                let settingsURL = URL(string:
+                    "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                NSWorkspace.shared.open(settingsURL)
+            }
+        } else {
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        }
     }
     @objc private func undo() { guard let canvas = actionDisplay?.canvas else { return }; canvas.finishStroke(); canvas.store.undo(); canvas.needsDisplay = true }
     @objc private func redo() { guard let canvas = actionDisplay?.canvas else { return }; canvas.finishStroke(); canvas.store.redo(); canvas.needsDisplay = true }
@@ -534,6 +889,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         updatePresentationControls()
         configurePointerTimer()
     }
+    @objc private func toggleClickAnimations() {
+        clickAnimationsEnabled.toggle()
+        UserDefaults.standard.set(clickAnimationsEnabled, forKey: "clickAnimationsEnabled")
+        updatePresentationControls()
+        configurePointerTimer()
+        configureClickMonitors()
+    }
     @objc private func toggleInkVisibility() {
         inkVisible.toggle()
         for display in displays.activeValues { display.canvas.inkVisible = inkVisible }
@@ -549,17 +911,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func updatePresentationControls() {
         fadingButton?.contentTintColor = fadingInkEnabled ? .systemCyan : .white
         haloButton?.contentTintColor = cursorHaloEnabled ? .systemCyan : .white
+        clickAnimationButton?.contentTintColor = clickAnimationsEnabled ? .systemCyan : .white
         inkVisibilityButton?.contentTintColor = inkVisible ? .white : .systemOrange
     }
 
     private func configurePointerTimer() {
         timer?.invalidate()
-        let smoothTracking = cursorHaloEnabled || (drawing && selectedTool == .laser)
+        let smoothTracking = cursorHaloEnabled || clickAnimationsEnabled
+            || (drawing && selectedTool == .laser)
         let interval = smoothTracking ? 1.0 / 60.0 : 0.05
         timer = Timer(timeInterval: interval, target: self, selector: #selector(trackPointer),
             userInfo: nil, repeats: true)
         timer?.tolerance = smoothTracking ? 0.001 : 0.01
         if let timer { RunLoop.main.add(timer, forMode: .common) }
+    }
+    private func configureClickMonitors() {
+        if let globalClickMonitor { NSEvent.removeMonitor(globalClickMonitor) }
+        if let localClickMonitor { NSEvent.removeMonitor(localClickMonitor) }
+        globalClickMonitor = nil
+        localClickMonitor = nil
+        guard clickAnimationsEnabled else { return }
+        globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) {
+            [weak self] _ in
+            Task { @MainActor in self?.showClickAnimation() }
+        }
+        localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) {
+            [weak self] event in
+            Task { @MainActor in self?.showClickAnimation() }
+            return event
+        }
+    }
+    private func showClickAnimation() {
+        guard clickAnimationsEnabled else { return }
+        let pointer = NSEvent.mouseLocation
+        guard let display = displays.activeValues.first(where: {
+            $0.window.frame.contains(pointer)
+        }) else { return }
+        let windowPoint = display.window.convertPoint(fromScreen: pointer)
+        let canvasPoint = display.canvas.convert(windowPoint, from: nil)
+        display.canvas.showClickAnimation(at: InkPoint(x: canvasPoint.x, y: canvasPoint.y),
+            time: now)
     }
     @objc private func quit() { NSApp.terminate(nil) }
 
@@ -574,6 +965,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         if defaults.object(forKey: "fontSizeIndex") != nil {
             fontSizeIndex = min(3, max(0, defaults.integer(forKey: "fontSizeIndex")))
+        }
+        clickAnimationsEnabled = defaults.bool(forKey: "clickAnimationsEnabled")
+        if let saved = defaults.string(forKey: "fontStyleID"),
+            TextFontCatalog.styles.contains(where: { $0.id == saved }) {
+            selectedFontStyleID = saved
+        }
+        if let saved = defaults.string(forKey: "textAlignment"),
+            let alignment = InkTextAlignment(rawValue: saved) {
+            selectedTextAlignment = alignment
         }
         if let raw = defaults.string(forKey: "drawingTool"), let tool = DrawingTool(rawValue: raw) {
             selectedTool = tool
@@ -631,5 +1031,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         showToolbar()
         return true
     }
-    func applicationWillTerminate(_ notification: Notification) { timer?.invalidate() }
+    func applicationWillTerminate(_ notification: Notification) {
+        timer?.invalidate()
+        if let globalClickMonitor { NSEvent.removeMonitor(globalClickMonitor) }
+        if let localClickMonitor { NSEvent.removeMonitor(localClickMonitor) }
+    }
 }

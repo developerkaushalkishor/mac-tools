@@ -4,18 +4,25 @@
 
 ScreenInk is a native macOS menu-bar app built with Swift, AppKit and Core Graphics. Use it to mark up code, explain an idea or point out details during a presentation. The project is MIT-licensed, and contributions are welcome.
 
-> **Early prototype · 0.5.2** — Build from source today. There is no published installer or notarized binary release yet. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
+> **Early prototype · 0.15.0** — Build from source today. There is no published installer or notarized binary release yet. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
 
-[Install](docs/INSTALLATION.md) · [Usage](docs/USAGE.md) · [Contribute](CONTRIBUTING.md) · [Roadmap](docs/PLAN.md) · [Report a bug](https://github.com/developerkaushalkishor/mac-tools/issues/new/choose)
+[Install](docs/INSTALLATION.md) · [Usage](docs/USAGE.md) · [Contribute](CONTRIBUTING.md) · [Release](docs/RELEASING.md) · [Roadmap](docs/PLAN.md) · [Report a bug](https://github.com/developerkaushalkishor/mac-tools/issues/new/choose)
 
 ## Features available now
 
 - Pen, translucent highlighter and undoable whole-stroke eraser.
 - 24-color palette, six quick colors and three widths, with saved tool settings.
 - Optional fading ink, cursor halo, temporary ink visibility and configurable global drawing shortcut.
+- Optional click animations that show a smooth non-blocking ripple in any app.
 - Temporary laser-pointer trail for live presentation emphasis.
 - Lines, arrows, rounded rectangles, ellipses and diamonds with Shift constraints, plus automatic closed-shape recognition for Pen strokes.
-- Place and re-edit colored text at four font sizes.
+- Place and re-edit colored text at four sizes with six curated fonts and left, center or right alignment.
+- Select, recolor, move and resize individual or marquee-selected groups of pen strokes, highlighter strokes, shapes and text with visual bounds and drag handles.
+- Select a board only from its frame; moving or resizing it transforms the annotations contained inside it.
+- Keep drawing gestures that begin inside a board within its writable surface; gestures started outside remain unrestricted.
+- Tool-specific macOS cursors that show the active drawing action at the pointer.
+- Framed whiteboard and blackboard backgrounds for one display, all displays or a dragged custom region.
+- Experimental full-display and drag-region screenshots with Retina PNG save or clipboard copy; permission handling still needs a reliable hands-on fix.
 - Undo, redo and clear; clearing a drawing can also be undone.
 - Compact icon toolbar, initially centered below the macOS menu bar.
 - Drag handle with remembered position and a reset command.
@@ -59,7 +66,7 @@ Drawings are temporary and are lost when the app quits. See the [control referen
 ## Known limitations
 
 - Each display has its own drawing history. Toolbar Undo/Redo/Clear affect the display containing the toolbar.
-- Text, boards and screenshots are **not implemented yet**.
+- Screenshot capture remains experimental. Screen Recording permission is required, and capture is still failing on the current test Mac after permission setup.
 - Undo/redo keyboard shortcuts work while the drawing canvas has focus; they are not global shortcuts.
 - Display changes do not rescale existing annotations.
 - Fullscreen/Spaces behavior, screen sharing and extended drawing sessions still need hands-on testing.
@@ -83,12 +90,12 @@ Use **Xcode → File → Open → Package.swift** for native debugging, or open 
 | `Sources/ScreenInk` | Native windows, toolbar, menu icon and canvas |
 | `Sources/InkCore` | Drawing history and toolbar visibility rules |
 | `Tests/InkCoreTests` | Model regression tests |
-| `scripts` | Environment selection, diagnostics, tests, build and launch |
+| `scripts` | Environment selection, diagnostics, tests, build, packaging and launch |
 | `Resources/Info.plist` | Application bundle metadata |
 
 ## Roadmap
 
-The next steps are hands-on validation, a stroke eraser and a highlighter. Shapes, text, fading ink, cursor highlighting, boards, screenshots and further multi-display validation follow incrementally. These are plans, not features already shipped. See the [roadmap](docs/PLAN.md).
+Current work is release readiness: resolve screenshot permission behavior, complete fullscreen/Spaces and physical-display checks, then sign, notarize and validate a public binary on a clean Mac. Spotlight and zoom remain optional extras. See the [roadmap](docs/PLAN.md).
 
 ## License
 

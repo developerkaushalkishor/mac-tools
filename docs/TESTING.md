@@ -30,9 +30,8 @@ Model regressions cover restoring a cleared canvas, invalidating redo after a ne
 - Every connected display has a canvas; physical hot-plug and fullscreen interaction still need manual verification.
 - Annotation positions do not rescale on display changes.
 - Drawings are in memory only; quitting discards them.
-- Stroke points and canvas redraw are not optimized for large drawings.
+- Redundant sub-point samples and expired fading ink are bounded; extended-session profiling with very large permanent drawings remains pending.
 - Six quick colors and the complete 24-color palette are available.
-- No eraser, highlighter, fade, cursor halo, shapes, text, boards, screenshots or global shortcuts yet.
 - Fullscreen, multiple displays, screen sharing and long sessions remain unverified until explicitly checked.
 
 See `STATUS.md` for the actual commands and desktop checks performed during setup.
@@ -118,3 +117,50 @@ Automated coverage includes inclusive top-edge coordinates, negative display ori
 - [ ] Click existing text with Text selected, edit it, then verify Undo and Redo restore each version.
 - [ ] Start typing and press Escape. Verify the draft is discarded and clicks reach the underlying app.
 - [ ] Erase text, clear it and use Fading Ink with text; verify history and fade behavior match drawing annotations.
+- [ ] Verify the text editor shows its hint, receives typing immediately and expands horizontally for longer text.
+- [ ] Open the font picker and verify all six rows preview their own style; create text with every font, restart, and verify the last choice is restored.
+- [ ] Select one and then several text annotations, change the font, and verify one Undo restores the previous fonts without changing selected shapes.
+- [ ] Create Left, Center and Right text at the same anchor and verify the editor plus final annotation use that anchor correctly. Apply alignment to several selected texts and verify one Undo restores them without changing selected shapes.
+- [ ] Select pen, highlighter, every shape type and text individually, then drag each selection to move it.
+- [ ] Resize closed shapes from all four corners, lines/arrows from both endpoints and text from its size handle.
+- [ ] Undo and Redo each transform and verify one drag produces exactly one history step.
+- [ ] Draw overlapping annotations and verify clicking a particular visible stroke selects the topmost annotation at that exact point.
+- [ ] Drag a marquee around several annotations, then move, resize and recolor the group. Verify outside annotations remain unchanged and each gesture is one Undo step.
+- [ ] Click a board interior and verify the board is not selected; use that area to select one annotation or drag-select several.
+- [ ] Select a custom or full-display board from its frame, then move and resize it. Verify contained annotations follow it while outside annotations stay fixed.
+- [ ] Start every drawing tool inside a board and drag beyond each edge; verify rendered content stays inside the writable surface. Start outside and verify drawing remains unrestricted.
+- [ ] Select every toolbar tool and verify the pointer immediately changes to its matching symbol; Text must show an I-beam and Normal mode must restore the underlying app cursor.
+
+## Milestone 5 boards
+
+- [ ] Draw annotations, switch among Screen, Whiteboard and Blackboard, and verify every annotation stays in place.
+- [ ] Switch backgrounds several times, press Undo once and verify the last annotation operation is undone rather than a background change.
+- [ ] Select white ink before Whiteboard and dark-gray ink before Blackboard; verify new ink changes to a readable contrasting color.
+- [ ] Verify each connected display receives the same board background and returning to Screen reveals the underlying apps.
+- [ ] Choose Current Display and verify the other display remains unchanged; then choose All Displays and verify both update.
+- [ ] Choose Region, drag in every direction and verify a framed board appears only inside the selected area; drags smaller than 120 × 80 points must cancel.
+- [ ] Visually inspect the aluminum whiteboard frame and wood-grain blackboard frame at normal and Retina scaling, including rounded corners, shadow and tray.
+
+## Milestone 6 screenshots
+
+- [ ] Deny Screen Recording permission on the first capture and verify ScreenInk explains the exact System Settings location without crashing.
+- [ ] Grant permission, reopen ScreenInk if macOS requests it, and capture the full toolbar display to clipboard and PNG.
+- [ ] Verify saved and copied images use Retina resolution, include ink/boards and underlying apps, and exclude the ScreenInk toolbar, popovers and pointer.
+- [ ] Drag screenshot regions in every direction on each display and compare the selected rectangle with the captured pixels, especially displays with negative origins.
+- [ ] Cancel a region smaller than 20 × 20 points and cancel the Save panel; verify neither action writes a file or changes drawing history.
+- [ ] Open Palette, Shapes and Board popovers, keep the pointer over their items for more than two seconds and verify the toolbar remains visible.
+- [ ] Interrupt reveal animations repeatedly and verify the toolbar's saved position never moves upward or overlaps the menu bar.
+
+## Milestone 8 Presentify extras
+
+- [ ] Enable Click Animations, return to normal mode and click several controls in another app; verify every click still works and a ripple appears on the correct display.
+- [ ] Click rapidly across both displays and verify ripples remain smooth, expire after half a second and never enter Undo/Redo history.
+- [ ] Disable Click Animations, restart ScreenInk and verify the saved setting is respected without displaying new ripples.
+
+## Milestone 9 release packaging
+
+- [x] Create a versioned host-architecture ZIP and SHA-256 checksum with `scripts/package-release.sh`.
+- [x] Verify the local archive structure, checksum and ad-hoc app signature.
+- [ ] Package with `REQUIRE_DISTRIBUTION_SIGNATURE=1` using a real Developer ID Application certificate.
+- [ ] Submit with an existing `notarytool` keychain profile, staple the ticket and verify Gatekeeper on a clean Mac.
+- [ ] Install the released build over an older version and confirm toolbar preferences plus normal click-through behavior.

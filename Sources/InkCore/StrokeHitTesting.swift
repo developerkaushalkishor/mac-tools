@@ -5,7 +5,12 @@ public enum StrokeHitTesting {
         if stroke.kind == .text, let origin = stroke.points.first, let text = stroke.text {
             let width = max(stroke.fontSize * 0.6, Double(text.count) * stroke.fontSize * 0.58)
             let height = stroke.fontSize * 1.3
-            return point.x >= origin.x - tolerance && point.x <= origin.x + width + tolerance
+            let minX = switch stroke.textAlignment {
+            case .left: origin.x
+            case .center: origin.x - width / 2
+            case .right: origin.x - width
+            }
+            return point.x >= minX - tolerance && point.x <= minX + width + tolerance
                 && point.y >= origin.y - tolerance && point.y <= origin.y + height + tolerance
         }
         let radius = tolerance + stroke.width / 2

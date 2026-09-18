@@ -25,15 +25,25 @@ final class DisplayCanvas {
     }
     func setDrawing(_ enabled: Bool) {
         canvas.finishStroke()
+        if !enabled { canvas.deactivateInteraction() }
         window.ignoresMouseEvents = !enabled
         canvas.setAccessibilityLabel(enabled ? "ScreenInk canvas: drawing mode" : "ScreenInk canvas: normal mode")
-        if !enabled { window.resignKey() }
+        if enabled {
+            canvas.activateToolCursor()
+        } else {
+            window.resignKey()
+            NSCursor.arrow.set()
+        }
     }
 }
 
 extension NSScreen {
+    var cgDisplayID: CGDirectDisplayID {
+        (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as! NSNumber).uint32Value
+    }
+
     var inkDisplayID: String {
-        let number = (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as! NSNumber).uint32Value
+        let number = cgDisplayID
         if let uuid = CGDisplayCreateUUIDFromDisplayID(number)?.takeRetainedValue() {
             return CFUUIDCreateString(nil, uuid) as String
         }

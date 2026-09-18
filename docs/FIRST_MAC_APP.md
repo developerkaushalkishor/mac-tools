@@ -46,6 +46,6 @@ Change a palette color in `AppDelegate.swift`, rebuild, and observe it. Then rea
 
 ## Packaging and permissions
 
-`Resources/Info.plist` describes the app identity and menu-bar behavior. The build script places the executable inside `dist/ScreenInk.app` and ad-hoc signs that bundle. Public binary distribution will need its own signing/notarization workflow; no credentials are included here.
+`Resources/Info.plist` describes the app identity and menu-bar behavior. The build script places the executable inside `dist/ScreenInk.app` and signs it with the configured identity or an ad-hoc fallback. `scripts/package-release.sh` creates a versioned ZIP and checksum and can use an existing Developer ID/notarization setup; no credentials are included here.
 
-The current prototype does not capture screen content or monitor global keyboard input. Future capture or shortcut work must evaluate permission requirements at implementation time.
+The app registers its drawing shortcut with the native hot-key API. Its experimental screenshot tool uses ScreenCaptureKit only after a user action and requires Screen Recording permission. Capture is still unreliable on the current test Mac, so contributors should keep permission behavior separate from coordinate and PNG tests.

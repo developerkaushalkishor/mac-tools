@@ -20,6 +20,7 @@ git switch -c fix/short-description
 bash scripts/doctor.sh
 bash scripts/test.sh
 bash scripts/build.sh
+codesign --verify --deep --strict --verbose=2 dist/ScreenInk.app
 ```
 
 See [installation](docs/INSTALLATION.md) and the [developer guide](docs/FIRST_MAC_APP.md) for toolchain details.
@@ -59,7 +60,9 @@ Maintainers may ask for narrower scope or additional verification. Keep discussi
 - Reproduce and document toolbar hover/drag and normal-mode behavior.
 - Verify the current app on another macOS version or display configuration.
 - Improve accessibility labels and beginner documentation.
-- Discuss the next planned stroke eraser before implementing it.
+- Reproduce and isolate the current Screen Recording permission failure without weakening macOS privacy controls.
+- Complete fullscreen, Spaces, physical display reconnect and long-session checks on additional Macs.
+- Exercise `scripts/package-release.sh` with a real Developer ID/notarization setup without committing credentials.
 
 These are suggestions, not claims that GitHub issues have already been created or assigned.
 

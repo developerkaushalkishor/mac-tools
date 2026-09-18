@@ -16,6 +16,12 @@ public enum StrokeKind: String, Equatable, Sendable {
     case text
 }
 
+public enum InkTextAlignment: String, Equatable, Sendable {
+    case left
+    case center
+    case right
+}
+
 public struct Stroke: Equatable, Sendable {
     public var points: [InkPoint]
     public var color: UInt32
@@ -27,9 +33,12 @@ public struct Stroke: Equatable, Sendable {
     public var kind: StrokeKind
     public var text: String?
     public var fontSize: Double
+    public var fontStyleID: String
+    public var textAlignment: InkTextAlignment
     public init(points: [InkPoint], color: UInt32, width: Double, opacity: Double = 1,
         createdAt: Double = 0, fadeAfter: Double? = nil, fadeDuration: Double = 1,
-        kind: StrokeKind = .freehand, text: String? = nil, fontSize: Double = 28) {
+        kind: StrokeKind = .freehand, text: String? = nil, fontSize: Double = 28,
+        fontStyleID: String = "system-rounded", textAlignment: InkTextAlignment = .left) {
         self.points = points
         self.color = color
         self.width = width
@@ -40,6 +49,8 @@ public struct Stroke: Equatable, Sendable {
         self.kind = kind
         self.text = text
         self.fontSize = fontSize
+        self.fontStyleID = fontStyleID
+        self.textAlignment = textAlignment
     }
 
     public func visibleOpacity(at time: Double) -> Double {
@@ -89,6 +100,13 @@ public struct StrokeStore {
         strokes[index] = stroke
     }
 
+    public mutating func replace(_ replacements: [Int: Stroke]) {
+        let valid = replacements.filter { strokes.indices.contains($0.key) && !$0.value.points.isEmpty }
+        guard !valid.isEmpty else { return }
+        checkpoint()
+        for (index, stroke) in valid { strokes[index] = stroke }
+    }
+
     public mutating func undo() {
         guard let previous = undoHistory.popLast() else { return }
         redoHistory.append(strokes)
@@ -99,6 +117,21 @@ public struct StrokeStore {
         guard let next = redoHistory.popLast() else { return }
         undoHistory.append(strokes)
         strokes = next
+    }
+
+    /// Removes fully invisible temporary ink from every history snapshot so long sessions do not
+    /// retain drawings that can never become visible again. This maintenance operation is not undoable.
+    @discardableResult
+    public mutating func removeExpiredFadingStrokes(at time: Double) -> Int {
+        let originalCount = strokes.count
+        strokes.removeAll { $0.fadeAfter != nil && $0.visibleOpacity(at: time) <= 0 }
+        undoHistory = undoHistory.map { snapshot in
+            snapshot.filter { $0.fadeAfter == nil || $0.visibleOpacity(at: time) > 0 }
+        }
+        redoHistory = redoHistory.map { snapshot in
+            snapshot.filter { $0.fadeAfter == nil || $0.visibleOpacity(at: time) > 0 }
+        }
+        return originalCount - strokes.count
     }
 
     private mutating func checkpoint() {

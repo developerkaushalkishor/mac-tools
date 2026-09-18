@@ -70,6 +70,34 @@ private func stroke(_ x: Double) -> Stroke {
     #expect(permanent.visibleOpacity(at: 10_000) == 0.28)
 }
 
+@Test func expiredFadingInkIsPurgedFromCurrentUndoAndRedoHistory() {
+    var store = StrokeStore()
+    let permanent = stroke(1)
+    let expired = Stroke(points: [InkPoint(x: 2, y: 10)], color: 0, width: 4,
+        createdAt: 10, fadeAfter: 2, fadeDuration: 1)
+    store.append(permanent)
+    store.append(expired)
+    store.undo()
+    store.redo()
+
+    #expect(store.removeExpiredFadingStrokes(at: 20) == 1)
+    #expect(store.strokes == [permanent])
+    store.undo()
+    #expect(store.strokes == [permanent])
+    store.redo()
+    #expect(store.strokes == [permanent])
+}
+
+@Test func strokePointSamplingDropsNoiseButPreservesTheExactEndpoint() {
+    var points = [InkPoint(x: 0, y: 0)]
+    StrokePointSampling.append(InkPoint(x: 0.2, y: 0.2), to: &points, minimumDistance: 1)
+    StrokePointSampling.append(InkPoint(x: 2, y: 0), to: &points, minimumDistance: 1)
+    StrokePointSampling.append(InkPoint(x: 2.2, y: 0), to: &points,
+        minimumDistance: 1, force: true)
+
+    #expect(points == [InkPoint(x: 0, y: 0), InkPoint(x: 2, y: 0), InkPoint(x: 2.2, y: 0)])
+}
+
 @Test func textReplacementIsOneUndoableOperationAndUsesTextBounds() {
     var store = StrokeStore()
     let original = Stroke(points: [InkPoint(x: 40, y: 50)], color: 0xBF5AF2,
@@ -85,4 +113,19 @@ private func stroke(_ x: Double) -> Stroke {
     #expect(store.strokes == [original])
     store.redo()
     #expect(store.strokes == [edited])
+}
+
+@Test func replacingSeveralStrokesIsOneUndoableOperation() {
+    var store = StrokeStore()
+    store.append(stroke(1))
+    store.append(stroke(2))
+    let originals = store.strokes
+    var first = originals[0]
+    var second = originals[1]
+    first.color = 0xBF5AF2
+    second.color = 0xBF5AF2
+    store.replace([0: first, 1: second])
+    #expect(store.strokes == [first, second])
+    store.undo()
+    #expect(store.strokes == originals)
 }

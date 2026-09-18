@@ -11,11 +11,11 @@ Prepared: 2026-09-18. Goal: an MIT-licensed, offline macOS annotation utility in
 | 2 — Presentation controls | Fading ink with delay, cursor halo, show/hide ink, configurable global toggle | Fade uses elapsed time; ordinary clicks work; shortcuts do not steal common app shortcuts; idle CPU stays low | Implemented in 0.3.0; hands-on acceptance check pending |
 | 3 — Shapes | Line, arrow, rectangle and ellipse; Shift constraints | Correct previews in each drag direction; undo/redo and colors work consistently | Implemented in 0.4.0; hands-on acceptance check pending |
 | 4 — Text | Place/edit text, font size/color, commit/cancel | Typing focus returns to underlying app on normal mode; Escape behavior defined | Implemented in 0.5.0; hands-on acceptance check pending |
-| 5 — Boards | Whiteboard and blackboard toggle | Background changes preserve annotations; undo stays predictable | 0.5–1 day |
-| 6 — Screenshots | Full display and region capture, PNG save, clipboard | Correct Retina output; toolbar excluded but ink included; denied permission handled | 1–2 days |
-| 7 — Reliability | Per-display overlays implemented; remaining fullscreen/Spaces matrix, physical reconnect verification, performance and packaging | Manual compatibility checklist passes on actual hardware | 3–5 days |
-| 8 — Optional Presentify extras | Click animations, spotlight, zoom | User confirms extras after using the core app; zoom feedback loop avoided | Re-estimate separately |
-| 9 — Public binary distribution | Stable identity, Developer ID/notarization and documented release/update process | Install and update smoke checks pass on a clean Mac | Re-estimate when distribution is scoped |
+| 5 — Boards | Whiteboard and blackboard toggle | Background changes preserve annotations; undo stays predictable | Implemented in 0.7.0; hands-on acceptance check pending |
+| 6 — Screenshots | Full display and region capture, PNG save, clipboard | Implemented in 0.12.0; hands-on permission, Retina and multi-display output check pending | Implemented; allow time for hands-on feedback/fixes |
+| 7 — Reliability | Per-display overlays, bounded temporary ink and point sampling implemented; remaining fullscreen/Spaces matrix, physical reconnect verification and packaging | Manual compatibility checklist passes on actual hardware | In progress; 3–5 days total estimate |
+| 8 — Optional Presentify extras | Click animations, spotlight, zoom | Click animations implemented in 0.14.0; spotlight and zoom remain optional | In progress |
+| 9 — Public binary distribution | Reproducible ZIP/checksum packaging and guarded Developer ID/notarization workflow implemented; Apple identity and clean-Mac validation pending | Install and update smoke checks pass on a clean Mac | In progress; external Apple credentials required for final gate |
 
 These are planning ranges for focused implementation, not promises. Milestones 1–6 total approximately 6.5–12 days after the starter; reliability and first-time learning add time. The initial 2–4 week stable-app target remains a reasonable planning window, subject to hands-on findings.
 
