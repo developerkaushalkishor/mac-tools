@@ -1,14 +1,14 @@
 import Testing
 @testable import InkCore
 
-@Test func toolbarHidesAfterIdleAndRevealsAfterEdgeDwell() {
+@Test func toolbarHidesAfterIdleAndRevealsOnFirstEdgeSample() {
     var state = ToolbarVisibility(now: 0)
     state.update(now: 1.9, toolbarHovered: false, topEdgeHovered: false, interacting: false, autoHide: true)
     #expect(state.isVisible)
     state.update(now: 2.1, toolbarHovered: false, topEdgeHovered: false, interacting: false, autoHide: true)
     #expect(!state.isVisible)
     state.update(now: 3, toolbarHovered: false, topEdgeHovered: true, interacting: false, autoHide: true)
-    #expect(!state.isVisible)
+    #expect(state.isVisible)
     state.update(now: 3.3, toolbarHovered: false, topEdgeHovered: true, interacting: false, autoHide: true)
     #expect(state.isVisible)
 }

@@ -10,10 +10,31 @@ public struct Stroke: Equatable, Sendable {
     public var points: [InkPoint]
     public var color: UInt32
     public var width: Double
-    public init(points: [InkPoint], color: UInt32, width: Double) {
+    public var opacity: Double
+    public var createdAt: Double
+    public var fadeAfter: Double?
+    public var fadeDuration: Double
+    public init(points: [InkPoint], color: UInt32, width: Double, opacity: Double = 1,
+        createdAt: Double = 0, fadeAfter: Double? = nil, fadeDuration: Double = 1) {
         self.points = points
         self.color = color
         self.width = width
+        self.opacity = opacity
+        self.createdAt = createdAt
+        self.fadeAfter = fadeAfter
+        self.fadeDuration = fadeDuration
+    }
+
+    public func visibleOpacity(at time: Double) -> Double {
+        guard let fadeAfter else { return opacity }
+        let progress = max(0, min(1, (time - createdAt - fadeAfter) / fadeDuration))
+        return opacity * (1 - progress)
+    }
+
+    public func isActivelyFading(at time: Double) -> Bool {
+        guard let fadeAfter else { return false }
+        let elapsed = time - createdAt
+        return elapsed >= fadeAfter && elapsed < fadeAfter + fadeDuration
     }
 }
 
@@ -36,6 +57,13 @@ public struct StrokeStore {
         guard !strokes.isEmpty else { return }
         checkpoint()
         strokes.removeAll()
+    }
+
+    public mutating func remove(at indices: Set<Int>) {
+        let valid = indices.filter { strokes.indices.contains($0) }
+        guard !valid.isEmpty else { return }
+        checkpoint()
+        for index in valid.sorted(by: >) { strokes.remove(at: index) }
     }
 
     public mutating func undo() {

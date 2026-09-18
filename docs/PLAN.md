@@ -7,13 +7,13 @@ Prepared: 2026-09-18. Goal: an MIT-licensed, offline macOS annotation utility in
 | Milestone | Deliverable | Acceptance gate | Estimated additional effort |
 | --- | --- | --- | --- |
 | 0 — Setup and starter | Swift package, app bundle, pen, six colors, width, normal mode, undo/redo, clear, menu and toolbar | Build/tests pass; complete desktop smoke checks before calling it daily-use ready | Implemented; allow time for hands-on feedback/fixes |
-| 1 — Essential drawing | Whole-stroke eraser, highlighter, 24-color palette, saved preferences | Erasing restores via undo; highlighter does not turn opaque on self-overlap; restart retains settings | 1–2 days |
-| 2 — Presentation controls | Fading ink with delay, cursor halo, show/hide ink, configurable global toggle | Fade uses elapsed time; ordinary clicks work; shortcuts do not steal common app shortcuts; idle CPU stays low | 1–2 days |
+| 1 — Essential drawing | Whole-stroke eraser, highlighter, 24-color palette, saved preferences | Erasing restores via undo; highlighter does not turn opaque on self-overlap; restart retains settings | Implemented in 0.2.0; hands-on acceptance check pending |
+| 2 — Presentation controls | Fading ink with delay, cursor halo, show/hide ink, configurable global toggle | Fade uses elapsed time; ordinary clicks work; shortcuts do not steal common app shortcuts; idle CPU stays low | Implemented in 0.3.0; hands-on acceptance check pending |
 | 3 — Shapes | Line, arrow, rectangle and ellipse; Shift constraints | Correct previews in each drag direction; undo/redo and colors work consistently | 1–2 days |
 | 4 — Text | Place/edit text, font size/color, commit/cancel | Typing focus returns to underlying app on normal mode; Escape behavior defined | 1–2 days |
 | 5 — Boards | Whiteboard and blackboard toggle | Background changes preserve annotations; undo stays predictable | 0.5–1 day |
 | 6 — Screenshots | Full display and region capture, PNG save, clipboard | Correct Retina output; toolbar excluded but ink included; denied permission handled | 1–2 days |
-| 7 — Reliability | One overlay per display, fullscreen/Spaces matrix, display reconnect, performance and packaging | Manual compatibility checklist passes on actual hardware | 3–5 days |
+| 7 — Reliability | Per-display overlays implemented; remaining fullscreen/Spaces matrix, physical reconnect verification, performance and packaging | Manual compatibility checklist passes on actual hardware | 3–5 days |
 | 8 — Optional Presentify extras | Click animations, spotlight, zoom | User confirms extras after using the core app; zoom feedback loop avoided | Re-estimate separately |
 | 9 — Public binary distribution | Stable identity, Developer ID/notarization and documented release/update process | Install and update smoke checks pass on a clean Mac | Re-estimate when distribution is scoped |
 
@@ -36,7 +36,7 @@ Do not implement the complete roadmap in one pass. Initial next task: validate t
 
 The app delegate owns native windows. The canvas converts window mouse coordinates to local points and renders strokes. `InkCore` owns platform-independent drawing history; it has no permission or windowing code. Normal mode makes the drawing panel transparent to mouse events while leaving the toolbar interactive.
 
-For shapes/text, evolve `Stroke` into an annotation enum rather than spreading tool-specific state throughout the app delegate. Before multi-display support, add a display controller and store drawings in display-local coordinates. When history becomes expensive, replace bounded snapshots with commands. Current history is capped at 100 operations, but point storage and long-session performance are not yet optimized.
+For shapes/text, evolve `Stroke` into an annotation enum rather than spreading tool-specific state throughout the app delegate. Multi-display support now uses `DisplayCanvas` panels and a `DisplayRegistry`; drawings stay in display-local coordinates. When history becomes expensive, replace bounded snapshots with commands. Current history is capped at 100 operations, but point storage and long-session performance are not yet optimized.
 
 Fading ink should use timestamps, with redraw scheduling only while fading content exists. Screenshot capture should exclude the toolbar window specifically; excluding the entire app would also exclude ink. Prefer no continuous screen capture until zoom is introduced.
 

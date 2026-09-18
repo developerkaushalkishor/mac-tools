@@ -26,11 +26,29 @@ final class DragHandle: NSView {
 }
 
 @MainActor
-final class ColorButton: NSButton {
+class FeedbackButton: NSButton {
+    override func mouseDown(with event: NSEvent) {
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.05
+            animator().alphaValue = 0.45
+        }
+        super.mouseDown(with: event)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.16
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            animator().alphaValue = 1
+        }
+    }
+}
+
+@MainActor
+final class ColorButton: FeedbackButton {
     var inkColor = NSColor.white
     var selected = false { didSet { needsDisplay = true } }
     override func draw(_ dirtyRect: NSRect) {
-        let circle = bounds.insetBy(dx: 7, dy: 7)
+        let diameter: CGFloat = 18
+        let circle = NSRect(x: bounds.midX - diameter / 2, y: bounds.midY - diameter / 2,
+            width: diameter, height: diameter)
         inkColor.setFill()
         NSBezierPath(ovalIn: circle).fill()
         if selected {
@@ -77,7 +95,7 @@ enum ScreenInkIcons {
     }
 
     static func button(_ symbol: String, label: String, target: AnyObject, action: Selector) -> NSButton {
-        let button = NSButton()
+        let button = FeedbackButton()
         button.title = ""
         button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: label)
         button.imagePosition = .imageOnly

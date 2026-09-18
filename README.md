@@ -4,13 +4,16 @@
 
 ScreenInk is a native macOS menu-bar app built with Swift, AppKit and Core Graphics. Use it to mark up code, explain an idea or point out details during a presentation. The project is MIT-licensed, and contributions are welcome.
 
-> **Early prototype · 0.1.0** — Build from source today. There is no published installer or notarized binary release yet. Only the primary display supports drawing; see [known limitations](#known-limitations).
+> **Early prototype · 0.3.1** — Build from source today. There is no published installer or notarized binary release yet. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
 
 [Install](docs/INSTALLATION.md) · [Usage](docs/USAGE.md) · [Contribute](CONTRIBUTING.md) · [Roadmap](docs/PLAN.md) · [Report a bug](https://github.com/developerkaushalkishor/mac-tools/issues/new/choose)
 
 ## Features available now
 
-- Freehand pen with six colors and three widths.
+- Pen, translucent highlighter and undoable whole-stroke eraser.
+- 24-color palette, six quick colors and three widths, with saved tool settings.
+- Optional fading ink, cursor halo, temporary ink visibility and configurable global drawing shortcut.
+- Temporary laser-pointer trail for live presentation emphasis.
 - Undo, redo and clear; clearing a drawing can also be undone.
 - Compact icon toolbar, initially centered below the macOS menu bar.
 - Drag handle with remembered position and a reset command.
@@ -43,18 +46,18 @@ See the [installation guide](docs/INSTALLATION.md) for installing to Application
 
 1. Find the pen-and-ink icon in the macOS menu bar. Choose **Show Toolbar** if necessary.
 2. Click the toolbar pen icon to enter drawing mode; click and drag to draw.
-3. Choose a color dot; click the line-weight icon to cycle widths.
-4. Press **Escape** to return to normal clicking, or use **Toggle Drawing** in the menu.
+3. Choose a quick color or open the palette for all 24 colors; click the line-weight icon to cycle widths.
+4. Press **Escape** or **right-click while drawing** to return to normal clicking, or use **Toggle Drawing** in the menu.
 5. Drag the dotted handle to move the toolbar. The up-chevron hides it and exits drawing mode.
-6. Hover at the top-center edge of the display containing the toolbar to reveal it, or use the menu-bar icon. The eye icon toggles auto-hide.
+6. Hover at any display's top-center edge to reveal the toolbar there, or use the menu-bar icon. The eye icon toggles auto-hide.
 7. Quit using **ScreenInk menu-bar icon → Quit ScreenInk**.
 
 Drawings are temporary and are lost when the app quits. See the [control reference](docs/USAGE.md) for details and recovery steps.
 
 ## Known limitations
 
-- The canvas supports the primary display only. Moving the toolbar does not create another display's canvas.
-- Eraser, highlighter, fading ink, cursor halo, shapes, text, boards, screenshots and global shortcuts are **not implemented yet**.
+- Each display has its own drawing history. Toolbar Undo/Redo/Clear affect the display containing the toolbar.
+- Shapes, text, boards and screenshots are **not implemented yet**.
 - Undo/redo keyboard shortcuts work while the drawing canvas has focus; they are not global shortcuts.
 - Display changes do not rescale existing annotations.
 - Fullscreen/Spaces behavior, screen sharing and extended drawing sessions still need hands-on testing.
@@ -83,7 +86,7 @@ Use **Xcode → File → Open → Package.swift** for native debugging, or open 
 
 ## Roadmap
 
-The next steps are hands-on validation, a stroke eraser and a highlighter. Shapes, text, fading ink, cursor highlighting, boards, screenshots and multi-display support follow incrementally. These are plans, not features already shipped. See the [roadmap](docs/PLAN.md).
+The next steps are hands-on validation, a stroke eraser and a highlighter. Shapes, text, fading ink, cursor highlighting, boards, screenshots and further multi-display validation follow incrementally. These are plans, not features already shipped. See the [roadmap](docs/PLAN.md).
 
 ## License
 
