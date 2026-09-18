@@ -4,7 +4,7 @@
 
 ScreenInk is a native macOS menu-bar app built with Swift, AppKit and Core Graphics. Use it to mark up code, explain an idea or point out details during a presentation. The project is MIT-licensed, and contributions are welcome.
 
-> **Early prototype · 0.3.1** — Build from source today. There is no published installer or notarized binary release yet. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
+> **Early prototype · 0.5.2** — Build from source today. There is no published installer or notarized binary release yet. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
 
 [Install](docs/INSTALLATION.md) · [Usage](docs/USAGE.md) · [Contribute](CONTRIBUTING.md) · [Roadmap](docs/PLAN.md) · [Report a bug](https://github.com/developerkaushalkishor/mac-tools/issues/new/choose)
 
@@ -14,6 +14,8 @@ ScreenInk is a native macOS menu-bar app built with Swift, AppKit and Core Graph
 - 24-color palette, six quick colors and three widths, with saved tool settings.
 - Optional fading ink, cursor halo, temporary ink visibility and configurable global drawing shortcut.
 - Temporary laser-pointer trail for live presentation emphasis.
+- Lines, arrows, rounded rectangles, ellipses and diamonds with Shift constraints, plus automatic closed-shape recognition for Pen strokes.
+- Place and re-edit colored text at four font sizes.
 - Undo, redo and clear; clearing a drawing can also be undone.
 - Compact icon toolbar, initially centered below the macOS menu bar.
 - Drag handle with remembered position and a reset command.
@@ -22,7 +24,7 @@ ScreenInk is a native macOS menu-bar app built with Swift, AppKit and Core Graph
 - Normal mode for clicking underlying apps; drawing remains visible.
 - Offline operation with no accounts, analytics, backend or third-party package dependencies.
 
-Toolbar hiding does **not** erase ink. Fading ink is a separate planned feature.
+Toolbar hiding does **not** erase ink. Fading Ink starts OFF each time the app launches.
 
 ## Quick start
 
@@ -45,7 +47,7 @@ See the [installation guide](docs/INSTALLATION.md) for installing to Application
 ## Basic use
 
 1. Find the pen-and-ink icon in the macOS menu bar. Choose **Show Toolbar** if necessary.
-2. Click the toolbar pen icon to enter drawing mode; click and drag to draw.
+2. Click the toolbar Pen icon to draw. Click the separate Cursor icon to return to normal app interaction.
 3. Choose a quick color or open the palette for all 24 colors; click the line-weight icon to cycle widths.
 4. Press **Escape** or **right-click while drawing** to return to normal clicking, or use **Toggle Drawing** in the menu.
 5. Drag the dotted handle to move the toolbar. The up-chevron hides it and exits drawing mode.
@@ -57,7 +59,7 @@ Drawings are temporary and are lost when the app quits. See the [control referen
 ## Known limitations
 
 - Each display has its own drawing history. Toolbar Undo/Redo/Clear affect the display containing the toolbar.
-- Shapes, text, boards and screenshots are **not implemented yet**.
+- Text, boards and screenshots are **not implemented yet**.
 - Undo/redo keyboard shortcuts work while the drawing canvas has focus; they are not global shortcuts.
 - Display changes do not rescale existing annotations.
 - Fullscreen/Spaces behavior, screen sharing and extended drawing sessions still need hands-on testing.

@@ -114,12 +114,49 @@ struct DisplayCanvasTests {
         }
         display.canvas.tool = .laser
         display.canvas.mouseDown(with: try event(.leftMouseDown, x: 20, time: 0))
+        #expect(display.canvas.showsLaserHead)
         display.canvas.mouseDragged(with: try event(.leftMouseDragged, x: 80, time: 1))
         display.canvas.mouseUp(with: try event(.leftMouseUp, x: 120, time: 2))
+        #expect(!display.canvas.showsLaserHead)
         #expect(display.canvas.store.strokes.isEmpty)
-        #expect(display.canvas.activeLaserSegmentCount == 2)
+        #expect(display.canvas.activeLaserSegmentCount == 3)
         display.canvas.refreshFading(at: ProcessInfo.processInfo.systemUptime + 1)
         #expect(display.canvas.activeLaserSegmentCount == 0)
+    }
+
+    @Test func textCanBePlacedEditedAndUndone() throws {
+        _ = NSApplication.shared
+        let screen = try #require(NSScreen.screens.first)
+        let display = DisplayCanvas(screen: screen)
+        defer { display.window.close() }
+        display.canvas.tool = .text
+        display.canvas.color = 0xBF5AF2
+        display.canvas.fontSize = 28
+
+        func click(x: CGFloat, y: CGFloat, time: TimeInterval) throws {
+            let event = try #require(NSEvent.mouseEvent(with: .leftMouseDown,
+                location: NSPoint(x: x, y: y), modifierFlags: [], timestamp: time,
+                windowNumber: display.window.windowNumber, context: nil,
+                eventNumber: Int(time), clickCount: 1, pressure: 1))
+            display.canvas.mouseDown(with: event)
+        }
+
+        try click(x: 70, y: 90, time: 1)
+        let newField = try #require(display.canvas.subviews.compactMap { $0 as? NSTextField }.first)
+        newField.stringValue = "Hello"
+        _ = newField.sendAction(newField.action, to: newField.target)
+        #expect(display.canvas.store.strokes.count == 1)
+        #expect(display.canvas.store.strokes[0].text == "Hello")
+
+        try click(x: 80, y: 100, time: 2)
+        let editField = try #require(display.canvas.subviews.compactMap { $0 as? NSTextField }.first)
+        #expect(editField.stringValue == "Hello")
+        editField.stringValue = "Hello ScreenInk"
+        _ = editField.sendAction(editField.action, to: editField.target)
+        #expect(display.canvas.store.strokes.count == 1)
+        #expect(display.canvas.store.strokes[0].text == "Hello ScreenInk")
+        display.canvas.store.undo()
+        #expect(display.canvas.store.strokes[0].text == "Hello")
     }
 
 }

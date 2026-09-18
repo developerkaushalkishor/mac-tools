@@ -6,6 +6,16 @@ public struct InkPoint: Equatable, Sendable {
     public init(x: Double, y: Double) { self.x = x; self.y = y }
 }
 
+public enum StrokeKind: String, Equatable, Sendable {
+    case freehand
+    case line
+    case arrow
+    case rectangle
+    case ellipse
+    case diamond
+    case text
+}
+
 public struct Stroke: Equatable, Sendable {
     public var points: [InkPoint]
     public var color: UInt32
@@ -14,8 +24,12 @@ public struct Stroke: Equatable, Sendable {
     public var createdAt: Double
     public var fadeAfter: Double?
     public var fadeDuration: Double
+    public var kind: StrokeKind
+    public var text: String?
+    public var fontSize: Double
     public init(points: [InkPoint], color: UInt32, width: Double, opacity: Double = 1,
-        createdAt: Double = 0, fadeAfter: Double? = nil, fadeDuration: Double = 1) {
+        createdAt: Double = 0, fadeAfter: Double? = nil, fadeDuration: Double = 1,
+        kind: StrokeKind = .freehand, text: String? = nil, fontSize: Double = 28) {
         self.points = points
         self.color = color
         self.width = width
@@ -23,6 +37,9 @@ public struct Stroke: Equatable, Sendable {
         self.createdAt = createdAt
         self.fadeAfter = fadeAfter
         self.fadeDuration = fadeDuration
+        self.kind = kind
+        self.text = text
+        self.fontSize = fontSize
     }
 
     public func visibleOpacity(at time: Double) -> Double {
@@ -64,6 +81,12 @@ public struct StrokeStore {
         guard !valid.isEmpty else { return }
         checkpoint()
         for index in valid.sorted(by: >) { strokes.remove(at: index) }
+    }
+
+    public mutating func replace(at index: Int, with stroke: Stroke) {
+        guard strokes.indices.contains(index), !stroke.points.isEmpty else { return }
+        checkpoint()
+        strokes[index] = stroke
     }
 
     public mutating func undo() {

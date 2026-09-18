@@ -97,3 +97,24 @@ Automated coverage includes inclusive top-edge coordinates, negative display ori
 - [ ] Move near, but not against, the top-center edge and verify the toolbar stays hidden; touch the top four-point strip to reveal it.
 - [ ] Enable Cursor Halo and verify it follows fast circles smoothly on every display.
 - [ ] Use Laser Pointer for several long gestures; verify trails fade quickly and Undo affects only permanent ink.
+
+## Milestone 3 shapes
+
+- [ ] Draw lines and arrows in every direction and verify the arrowhead follows the endpoint.
+- [ ] Hold Shift and verify lines/arrows snap to 45-degree increments.
+- [ ] Draw rectangles and ellipses in all four drag directions.
+- [ ] Hold Shift and verify rectangles become squares and ellipses become circles.
+- [ ] Verify color, width and fading ink apply to every shape.
+- [ ] Erase each shape by touching its outline or arrowhead, then Undo and Redo.
+- [ ] Repeat shape drawing on every connected display.
+- [ ] With the Pen tool, draw a rough closed circle, square and diamond. Verify each snaps to the expected softly rounded shape on pointer release.
+- [ ] Draw open curves and handwriting with the Pen tool. Verify ambiguous strokes are not converted.
+
+## Milestone 4 text
+
+- [ ] Select Text, click each display, type and press Return. Verify the committed text stays at the chosen location.
+- [ ] Cycle through 20, 28, 40 and 56 point sizes and verify new text uses each size.
+- [ ] Change the ink color, place text and verify its color remains unchanged after selecting another color.
+- [ ] Click existing text with Text selected, edit it, then verify Undo and Redo restore each version.
+- [ ] Start typing and press Escape. Verify the draft is discarded and clicks reach the underlying app.
+- [ ] Erase text, clear it and use Fading Ink with text; verify history and fade behavior match drawing annotations.

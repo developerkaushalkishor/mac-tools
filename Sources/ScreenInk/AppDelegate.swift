@@ -1,5 +1,6 @@
 import AppKit
 import InkCore
+import QuartzCore
 
 @MainActor
 final class InkPanel: NSPanel {
@@ -13,15 +14,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var selectedColor: UInt32 = 0xBF5AF2
     private var toolbar: ToolbarPanel!
     private var statusItem: NSStatusItem!
+    private var normalButton: NSButton!
     private var modeButton: NSButton!
     private var highlighterButton: NSButton!
     private var eraserButton: NSButton!
     private var laserButton: NSButton!
+    private var shapeButton: NSButton!
+    private var textButton: NSButton!
+    private var fontSizeButton: NSButton!
     private var paletteButton: NSButton!
     private var fadingButton: NSButton!
     private var haloButton: NSButton!
     private var inkVisibilityButton: NSButton!
     private let palettePopover = NSPopover()
+    private let shapePopover = NSPopover()
     private var autoHideButton: NSButton!
     private var autoHideItem: NSMenuItem!
     private var swatches: [ColorButton] = []
@@ -34,6 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     ]
     private var drawing = false
     private var widthIndex = 1
+    private var fontSizeIndex = 1
     private var selectedTool: DrawingTool = .pen
     private var fadingInkEnabled = false
     private var fadeDelay: Double = 5
@@ -103,14 +110,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         handle.heightAnchor.constraint(equalToConstant: 34).isActive = true
         handle.didDrag = { [weak self] in self?.savePosition() }
         row.addArrangedSubview(handle)
-        modeButton = icon("pencil.tip.crop.circle", "Draw / Normal mode (Escape)", #selector(toggleDrawing))
+        normalButton = icon("cursorarrow", "Normal mode — interact with apps (Escape or right-click)",
+            #selector(selectNormal))
+        row.addArrangedSubview(normalButton)
+        modeButton = icon("pencil.tip", "Pen — draw permanent ink", #selector(selectPen))
         row.addArrangedSubview(modeButton)
-        highlighterButton = icon("highlighter", "Highlighter", #selector(selectHighlighter))
+        highlighterButton = icon("highlighter", "Highlighter — broad translucent ink", #selector(selectHighlighter))
         row.addArrangedSubview(highlighterButton)
         eraserButton = icon("eraser", "Whole-stroke eraser", #selector(selectEraser))
         row.addArrangedSubview(eraserButton)
-        laserButton = icon("scope", "Laser pointer", #selector(selectLaser))
+        laserButton = icon("laser.burst", "Laser pointer — progressive fading trail", #selector(selectLaser))
         row.addArrangedSubview(laserButton)
+        shapeButton = icon("square.on.circle", "Shapes: line, arrow, rectangle, ellipse, diamond", #selector(showShapes(_:)))
+        row.addArrangedSubview(shapeButton)
+        createShapePicker()
+        textButton = icon("textformat", "Text — click canvas to type", #selector(selectText))
+        row.addArrangedSubview(textButton)
         divider(in: row)
         let names = ["Purple", "Red", "Yellow", "Green", "Blue", "White"]
         for (index, hex) in colors.enumerated() {
@@ -135,6 +150,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         createPalette()
         divider(in: row)
         row.addArrangedSubview(icon("lineweight", "Pen width: Medium — click to cycle", #selector(changeWidth(_:))))
+        fontSizeButton = icon("textformat.size",
+            "Text size: \(Int([20, 28, 40, 56][fontSizeIndex])) pt — click to cycle",
+            #selector(changeFontSize(_:)))
+        row.addArrangedSubview(fontSizeButton)
         row.addArrangedSubview(icon("arrow.uturn.backward", "Undo on toolbar display", #selector(undo)))
         row.addArrangedSubview(icon("arrow.uturn.forward", "Redo on toolbar display", #selector(redo)))
         row.addArrangedSubview(icon("trash", "Clear drawing on toolbar display", #selector(clear)))
@@ -156,7 +175,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         updateAutoHideControls()
         updateToolControls()
         updatePresentationControls()
-        toolbar.orderFrontRegardless()
+        presentToolbar()
     }
 
     private func icon(_ symbol: String, _ label: String, _ action: Selector) -> NSButton {
@@ -265,6 +284,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         palettePopover.behavior = .transient
     }
 
+    private func createShapePicker() {
+        let controller = NSViewController()
+        let row = NSStackView()
+        row.orientation = .horizontal
+        row.spacing = 6
+        let choices: [(String, String, Selector)] = [
+            ("line.diagonal", "Line", #selector(selectLine)),
+            ("arrow.up.right", "Arrow", #selector(selectArrow)),
+            ("rectangle", "Rectangle", #selector(selectRectangle)),
+            ("circle", "Ellipse", #selector(selectEllipse)),
+            ("diamond", "Diamond", #selector(selectDiamond))
+        ]
+        for (symbol, label, action) in choices {
+            row.addArrangedSubview(icon(symbol, label, action))
+        }
+        row.translatesAutoresizingMaskIntoConstraints = false
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 206, height: 54))
+        container.addSubview(row)
+        NSLayoutConstraint.activate([
+            row.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            row.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        controller.view = container
+        controller.preferredContentSize = container.frame.size
+        shapePopover.contentViewController = controller
+        shapePopover.behavior = .transient
+    }
+
     private func color(_ hex: UInt32) -> NSColor {
         NSColor(srgbRed: CGFloat((hex >> 16) & 255) / 255,
             green: CGFloat((hex >> 8) & 255) / 255, blue: CGFloat(hex & 255) / 255, alpha: 1)
@@ -286,6 +333,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             guard let display = displays[id], let screen = screenByID[id] else { continue }
             display.canvas.color = selectedColor
             display.canvas.penWidth = [2, 4, 8][widthIndex]
+            display.canvas.fontSize = [20, 28, 40, 56][fontSizeIndex]
             display.canvas.tool = selectedTool
             display.canvas.fadingInkEnabled = fadingInkEnabled
             display.canvas.fadeDelay = fadeDelay
@@ -305,7 +353,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func setDrawing(_ enabled: Bool) {
         drawing = enabled
         for display in displays.activeValues { display.setDrawing(enabled) }
-        modeButton.setAccessibilityValue(enabled ? "Drawing" : "Normal")
+        normalButton.setAccessibilityValue(enabled ? "Inactive" : "Selected")
+        modeButton.setAccessibilityValue(enabled && selectedTool == .pen ? "Selected" : "Inactive")
         if enabled, let display = actionDisplay {
             display.window.makeKeyAndOrderFront(nil)
             display.window.makeFirstResponder(display.canvas)
@@ -349,19 +398,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 savePosition()
                 moved = true
             }
-            if !wasVisible || moved || !toolbar.isVisible || !toolbar.isOnActiveSpace {
+            if !wasVisible || !toolbar.isVisible {
+                presentToolbar()
+            } else if moved || !toolbar.isOnActiveSpace {
                 toolbar.orderFrontRegardless()
             }
         } else if toolbar.isVisible {
+            toolbar.alphaValue = 1
             toolbar.orderOut(nil)
         }
     }
 
-    @objc private func showToolbar() { visibility.show(now: now); toolbar.orderFrontRegardless() }
+    private func presentToolbar() {
+        guard !toolbar.isVisible else {
+            toolbar.alphaValue = 1
+            toolbar.orderFrontRegardless()
+            return
+        }
+        let finalOrigin = toolbar.frame.origin
+        toolbar.alphaValue = 0
+        toolbar.setFrameOrigin(NSPoint(x: finalOrigin.x, y: finalOrigin.y + 12))
+        toolbar.orderFrontRegardless()
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.22
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            toolbar.animator().alphaValue = 1
+            toolbar.animator().setFrameOrigin(finalOrigin)
+        }
+    }
+
+    @objc private func showToolbar() { visibility.show(now: now); presentToolbar() }
     @objc private func hideToolbar() {
         // Manual hiding also releases input so the user can immediately return to work.
         if drawing { setDrawing(false) }
         visibility.hide(topEdgeHovered: atTopEdge(NSEvent.mouseLocation))
+        toolbar.alphaValue = 1
         toolbar.orderOut(nil)
     }
     @objc private func toggleAutoHide() { autoHide.toggle(); updateAutoHideControls(); showToolbar() }
@@ -370,14 +441,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         autoHideButton?.contentTintColor = autoHide ? .systemCyan : .white
         autoHideButton?.setAccessibilityValue(autoHide ? "On" : "Off")
     }
-    @objc private func toggleDrawing() {
-        if drawing && selectedTool == .pen { setDrawing(false) }
-        else { selectTool(.pen) }
-    }
+    @objc private func selectNormal() { setDrawing(false) }
+    @objc private func selectPen() { selectTool(.pen) }
     @objc private func toggleDrawingState() { setDrawing(!drawing) }
     @objc private func selectHighlighter() { selectTool(.highlighter) }
     @objc private func selectEraser() { selectTool(.eraser) }
     @objc private func selectLaser() { selectTool(.laser) }
+    @objc private func selectLine() { selectShape(.line) }
+    @objc private func selectArrow() { selectShape(.arrow) }
+    @objc private func selectRectangle() { selectShape(.rectangle) }
+    @objc private func selectEllipse() { selectShape(.ellipse) }
+    @objc private func selectDiamond() { selectShape(.diamond) }
+    @objc private func selectText() { selectTool(.text) }
+    @objc private func showShapes(_ sender: NSButton) {
+        shapePopover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+    }
+    private func selectShape(_ tool: DrawingTool) {
+        shapePopover.close()
+        selectTool(tool)
+    }
     private func selectTool(_ tool: DrawingTool) {
         selectedTool = tool
         UserDefaults.standard.set(tool.rawValue, forKey: "drawingTool")
@@ -386,10 +468,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         updateToolControls()
     }
     private func updateToolControls() {
+        normalButton?.contentTintColor = drawing ? .white : .systemCyan
         modeButton?.contentTintColor = drawing && selectedTool == .pen ? .systemCyan : .white
-        highlighterButton?.contentTintColor = drawing && selectedTool == .highlighter ? .systemCyan : .white
+        highlighterButton?.contentTintColor = drawing && selectedTool == .highlighter ? .systemYellow : .white
         eraserButton?.contentTintColor = drawing && selectedTool == .eraser ? .systemCyan : .white
         laserButton?.contentTintColor = drawing && selectedTool == .laser ? .systemRed : .white
+        let shapeTools: Set<DrawingTool> = [.line, .arrow, .rectangle, .ellipse, .diamond]
+        shapeButton?.contentTintColor = drawing && shapeTools.contains(selectedTool) ? .systemCyan : .white
+        textButton?.contentTintColor = drawing && selectedTool == .text ? .systemCyan : .white
     }
     @objc private func showPalette(_ sender: NSButton) {
         palettePopover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
@@ -418,12 +504,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         sender.toolTip = label
         sender.setAccessibilityLabel(label)
     }
+    @objc private func changeFontSize(_ sender: NSButton) {
+        let sizes: [Double] = [20, 28, 40, 56]
+        fontSizeIndex = (fontSizeIndex + 1) % sizes.count
+        UserDefaults.standard.set(fontSizeIndex, forKey: "fontSizeIndex")
+        for display in displays.activeValues { display.canvas.fontSize = sizes[fontSizeIndex] }
+        let label = "Text size: \(Int(sizes[fontSizeIndex])) pt — click to cycle"
+        sender.toolTip = label
+        sender.setAccessibilityLabel(label)
+    }
     @objc private func undo() { guard let canvas = actionDisplay?.canvas else { return }; canvas.finishStroke(); canvas.store.undo(); canvas.needsDisplay = true }
     @objc private func redo() { guard let canvas = actionDisplay?.canvas else { return }; canvas.finishStroke(); canvas.store.redo(); canvas.needsDisplay = true }
     @objc private func clear() { guard let canvas = actionDisplay?.canvas else { return }; canvas.finishStroke(); canvas.store.clear(); canvas.needsDisplay = true }
     @objc private func toggleFadingInk() {
         fadingInkEnabled.toggle()
-        UserDefaults.standard.set(fadingInkEnabled, forKey: "fadingInkEnabled")
         for display in displays.activeValues { display.canvas.fadingInkEnabled = fadingInkEnabled }
         updatePresentationControls()
     }
@@ -478,10 +572,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if defaults.object(forKey: "penWidthIndex") != nil {
             widthIndex = min(2, max(0, defaults.integer(forKey: "penWidthIndex")))
         }
+        if defaults.object(forKey: "fontSizeIndex") != nil {
+            fontSizeIndex = min(3, max(0, defaults.integer(forKey: "fontSizeIndex")))
+        }
         if let raw = defaults.string(forKey: "drawingTool"), let tool = DrawingTool(rawValue: raw) {
             selectedTool = tool
         }
-        fadingInkEnabled = defaults.bool(forKey: "fadingInkEnabled")
+        // Fading ink is intentionally opt-in for every new app session.
+        fadingInkEnabled = false
+        defaults.removeObject(forKey: "fadingInkEnabled")
         cursorHaloEnabled = defaults.bool(forKey: "cursorHaloEnabled")
         if defaults.object(forKey: "fadeDelay") != nil {
             let savedDelay = defaults.double(forKey: "fadeDelay")

@@ -69,3 +69,20 @@ private func stroke(_ x: Double) -> Stroke {
     let permanent = Stroke(points: [InkPoint(x: 0, y: 0)], color: 0, width: 4, opacity: 0.28)
     #expect(permanent.visibleOpacity(at: 10_000) == 0.28)
 }
+
+@Test func textReplacementIsOneUndoableOperationAndUsesTextBounds() {
+    var store = StrokeStore()
+    let original = Stroke(points: [InkPoint(x: 40, y: 50)], color: 0xBF5AF2,
+        width: 1, kind: .text, text: "Hello", fontSize: 28)
+    store.append(original)
+    let edited = Stroke(points: original.points, color: original.color,
+        width: 1, kind: .text, text: "Hello ScreenInk", fontSize: 28)
+    store.replace(at: 0, with: edited)
+    #expect(store.strokes == [edited])
+    #expect(StrokeHitTesting.hits(edited, point: InkPoint(x: 80, y: 60), tolerance: 0))
+    #expect(!StrokeHitTesting.hits(edited, point: InkPoint(x: 20, y: 60), tolerance: 0))
+    store.undo()
+    #expect(store.strokes == [original])
+    store.redo()
+    #expect(store.strokes == [edited])
+}

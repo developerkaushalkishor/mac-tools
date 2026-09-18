@@ -2,13 +2,40 @@ import Foundation
 
 public enum StrokeHitTesting {
     public static func hits(_ stroke: Stroke, point: InkPoint, tolerance: Double) -> Bool {
+        if stroke.kind == .text, let origin = stroke.points.first, let text = stroke.text {
+            let width = max(stroke.fontSize * 0.6, Double(text.count) * stroke.fontSize * 0.58)
+            let height = stroke.fontSize * 1.3
+            return point.x >= origin.x - tolerance && point.x <= origin.x + width + tolerance
+                && point.y >= origin.y - tolerance && point.y <= origin.y + height + tolerance
+        }
         let radius = tolerance + stroke.width / 2
-        guard let first = stroke.points.first else { return false }
-        if stroke.points.count == 1 { return distance(first, point) <= radius }
-        for (start, end) in zip(stroke.points, stroke.points.dropFirst()) {
+        let path = pathPoints(for: stroke)
+        guard let first = path.first else { return false }
+        if path.count == 1 { return distance(first, point) <= radius }
+        for (start, end) in zip(path, path.dropFirst()) {
             if distanceToSegment(point, start, end) <= radius { return true }
         }
+        if stroke.kind == .arrow, let start = stroke.points.first, let end = stroke.points.last {
+            let head = ShapeGeometry.arrowHead(start: start, end: end, width: stroke.width)
+            for (headStart, headEnd) in zip(head, head.dropFirst()) {
+                if distanceToSegment(point, headStart, headEnd) <= radius { return true }
+            }
+        }
         return false
+    }
+
+    public static func pathPoints(for stroke: Stroke) -> [InkPoint] {
+        guard let start = stroke.points.first, let end = stroke.points.last else { return [] }
+        switch stroke.kind {
+        case .freehand, .line, .arrow, .text:
+            return stroke.points
+        case .rectangle:
+            return ShapeGeometry.handDrawnRoundedRectanglePoints(start: start, end: end)
+        case .ellipse:
+            return ShapeGeometry.handDrawnEllipsePoints(start: start, end: end)
+        case .diamond:
+            return ShapeGeometry.handDrawnDiamondPoints(start: start, end: end)
+        }
     }
 
     private static func distance(_ a: InkPoint, _ b: InkPoint) -> Double {
