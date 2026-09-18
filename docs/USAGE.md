@@ -27,6 +27,7 @@ ScreenInk runs in the macOS menu bar and starts in normal mouse mode. Its toolba
 | Eye slash | Temporarily hide/show all ink without deleting it |
 | Board | Choose the live screen, a whiteboard or a blackboard background |
 | Eye | Toggle toolbar auto-hide; cyan means enabled |
+| Power | Disable ScreenInk completely; use the menu-bar icon to enable it again |
 | Up-chevron | Hide the toolbar immediately and return to normal input |
 | Menu-bar pen-and-ink icon | Show/Hide Toolbar, Reset Toolbar to Top Center, Auto-hide Toolbar, Toggle Drawing, Clear Drawing and Quit ScreenInk |
 
@@ -95,6 +96,10 @@ Auto-hide is enabled by default. The toolbar hides after two seconds away; holdi
 Dragging the toolbar preserves its chosen location. Hover-reveal on the same display keeps that location. Touching another display's top-center edge moves the toolbar to the top center of that display. Reset Toolbar to Top Center restores the default. The reveal region is centered on the physical display, is exactly one toolbar wide and covers only its top four points. A reveal request on another display moves the toolbar even when it is already visible. After manually hiding at the edge, leave the reveal area and re-enter to show it again.
 
 **Auto-hide hides only the toolbar and keeps the drawing mode unchanged.** The manual Hide Toolbar command also exits drawing mode. Neither erases ink. Use Trash or Clear Drawing to clear annotations.
+
+## Disable and enable ScreenInk
+
+Choose the toolbar Power button or **ScreenInk menu-bar icon → Disable ScreenInk** when the utility is not needed. ScreenInk immediately releases drawing input, hides the toolbar and every canvas overlay, stops click monitoring and ignores the top-edge reveal area. Existing annotations remain in memory. The menu-bar icon stays available; choose **Enable ScreenInk** there to restore the overlays and toolbar. This setting is remembered across launches, so a disabled ScreenInk stays quiet after restart.
 
 ## Session limits
 

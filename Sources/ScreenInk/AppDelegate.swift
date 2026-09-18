@@ -41,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let screenshotPopover = NSPopover()
     private var autoHideButton: NSButton!
     private var autoHideItem: NSMenuItem!
+    private var availabilityItem: NSMenuItem!
     private var swatches: [ColorButton] = []
     private var paletteSwatches: [ColorButton] = []
     private var boardStyleButtons: [NSButton] = []
@@ -70,6 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var timer: Timer?
     private var globalClickMonitor: Any?
     private var localClickMonitor: Any?
+    private var availability = ToolAvailability()
     private var autoHide: Bool {
         get { UserDefaults.standard.object(forKey: "toolbarAutoHide") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "toolbarAutoHide") }
@@ -85,7 +87,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         createMenu()
         hotKey = GlobalHotKey { [weak self] in self?.toggleDrawingState() }
         hotKey?.register(shortcutChoice)
-        visibility.show(now: now)
+        if availability.isEnabled {
+            visibility.show(now: now)
+        } else {
+            visibility.hide(topEdgeHovered: false)
+            toolbar.orderOut(nil)
+        }
         configurePointerTimer()
         configureClickMonitors()
         NotificationCenter.default.addObserver(self, selector: #selector(displayChanged),
@@ -208,6 +215,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         divider(in: row)
         autoHideButton = icon("eye", "Toggle auto-hide (2 seconds)", #selector(toggleAutoHide))
         row.addArrangedSubview(autoHideButton)
+        row.addArrangedSubview(icon("power", "Disable ScreenInk — re-enable from the menu bar",
+            #selector(toggleToolAvailability)))
         row.addArrangedSubview(icon("chevron.up", "Hide toolbar — hover at top-center to show", #selector(hideToolbar)))
         toolbar.contentView = background
         background.layoutSubtreeIfNeeded()
@@ -216,7 +225,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         updateAutoHideControls()
         updateToolControls()
         updatePresentationControls()
-        presentToolbar()
+        if availability.isEnabled { presentToolbar() }
     }
 
     private func icon(_ symbol: String, _ label: String, _ action: Selector) -> NSButton {
@@ -237,6 +246,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         statusItem.button?.toolTip = "ScreenInk — screen annotation"
         statusItem.button?.setAccessibilityLabel("ScreenInk")
         let menu = NSMenu()
+        availabilityItem = NSMenuItem(title: availability.isEnabled ? "Disable ScreenInk" : "Enable ScreenInk",
+            action: #selector(toggleToolAvailability), keyEquivalent: "")
+        availabilityItem.target = self
+        menu.addItem(availabilityItem)
+        menu.addItem(.separator())
         for (title, action) in [("Show Toolbar", #selector(showToolbar)), ("Hide Toolbar", #selector(hideToolbar)),
             ("Reset Toolbar to Top Center", #selector(resetPosition)), ("Auto-hide Toolbar", #selector(toggleAutoHide)),
             ("Toggle Drawing", #selector(toggleDrawingState)), ("Clear Drawing on Toolbar Display", #selector(clear)),
@@ -529,8 +543,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             display.canvas.cursorHaloEnabled = cursorHaloEnabled
             display.canvas.inkVisible = inkVisible
             display.window.setFrame(screen.frame, display: true)
-            display.setDrawing(drawing)
-            display.window.orderFrontRegardless()
+            display.setDrawing(availability.isEnabled && drawing)
+            if availability.permitsOverlayPresentation {
+                display.window.orderFrontRegardless()
+            } else {
+                display.window.orderOut(nil)
+            }
         }
     }
 
@@ -540,21 +558,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func setDrawing(_ enabled: Bool) {
-        drawing = enabled
-        for display in displays.activeValues { display.setDrawing(enabled) }
-        normalButton.setAccessibilityValue(enabled ? "Inactive" : "Selected")
-        modeButton.setAccessibilityValue(enabled && selectedTool == .pen ? "Selected" : "Inactive")
-        if enabled, let display = actionDisplay {
+        drawing = availability.isEnabled && enabled
+        for display in displays.activeValues { display.setDrawing(drawing) }
+        normalButton.setAccessibilityValue(drawing ? "Inactive" : "Selected")
+        modeButton.setAccessibilityValue(drawing && selectedTool == .pen ? "Selected" : "Inactive")
+        if drawing, let display = actionDisplay {
             display.window.makeKeyAndOrderFront(nil)
             display.window.makeFirstResponder(display.canvas)
         }
         updateToolControls()
         configurePointerTimer()
-        showToolbar()
+        if availability.isEnabled { showToolbar() }
     }
 
     private func topEdgeScreen(_ point: NSPoint) -> NSScreen? {
-        NSScreen.screens.first { screen in
+        guard availability.permitsEdgeReveal else { return nil }
+        return NSScreen.screens.first { screen in
             ToolbarGeometry.isRevealPoint(point, frame: screen.frame, visibleFrame: screen.visibleFrame,
                 toolbarWidth: toolbar.frame.width, toolbarHeight: toolbar.frame.height)
         }
@@ -563,6 +582,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func atTopEdge(_ point: NSPoint) -> Bool { topEdgeScreen(point) != nil }
 
     @objc private func trackPointer() {
+        guard availability.isEnabled else {
+            if toolbar.isVisible { toolbar.orderOut(nil) }
+            return
+        }
         let pointer = NSEvent.mouseLocation
         let currentTime = now
         for display in displays.activeValues {
@@ -605,6 +628,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func presentToolbar() {
+        guard availability.permitsOverlayPresentation else { return }
         guard !toolbar.isVisible else {
             toolbar.alphaValue = 1
             toolbar.orderFrontRegardless()
@@ -628,7 +652,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
 
-    @objc private func showToolbar() { visibility.show(now: now); presentToolbar() }
+    @objc private func showToolbar() {
+        guard availability.isEnabled else { return }
+        visibility.show(now: now)
+        presentToolbar()
+    }
     @objc private func hideToolbar() {
         // Manual hiding also releases input so the user can immediately return to work.
         if drawing { setDrawing(false) }
@@ -638,6 +666,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         toolbar.orderOut(nil)
     }
     @objc private func toggleAutoHide() { autoHide.toggle(); updateAutoHideControls(); showToolbar() }
+    @objc private func toggleToolAvailability() {
+        setToolAvailability(!availability.isEnabled)
+    }
+    private func setToolAvailability(_ enabled: Bool) {
+        availability.setEnabled(enabled)
+        UserDefaults.standard.set(enabled, forKey: "screenInkEnabled")
+        availabilityItem?.title = enabled ? "Disable ScreenInk" : "Enable ScreenInk"
+        if enabled {
+            reconcileDisplays()
+            visibility.show(now: now)
+            presentToolbar()
+        } else {
+            setDrawing(false)
+            [palettePopover, shapePopover, boardPopover, fontPopover,
+                textAlignmentPopover, screenshotPopover].forEach { $0.close() }
+            visibility.hide(topEdgeHovered: false)
+            toolbar.contentView?.layer?.removeAnimation(forKey: "toolbarRevealSlide")
+            toolbar.orderOut(nil)
+            for display in displays.activeValues {
+                display.setDrawing(false)
+                display.window.orderOut(nil)
+            }
+        }
+        configurePointerTimer()
+        configureClickMonitors()
+    }
     private func updateAutoHideControls() {
         autoHideItem?.state = autoHide ? .on : .off
         autoHideButton?.contentTintColor = autoHide ? .systemCyan : .white
@@ -917,9 +971,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func configurePointerTimer() {
         timer?.invalidate()
-        let smoothTracking = cursorHaloEnabled || clickAnimationsEnabled
+        let smoothTracking = availability.isEnabled && (cursorHaloEnabled || clickAnimationsEnabled
             || (drawing && selectedTool == .laser)
-        let interval = smoothTracking ? 1.0 / 60.0 : 0.05
+        )
+        let interval = smoothTracking ? 1.0 / 60.0 : (availability.isEnabled ? 0.05 : 0.25)
         timer = Timer(timeInterval: interval, target: self, selector: #selector(trackPointer),
             userInfo: nil, repeats: true)
         timer?.tolerance = smoothTracking ? 0.001 : 0.01
@@ -930,7 +985,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if let localClickMonitor { NSEvent.removeMonitor(localClickMonitor) }
         globalClickMonitor = nil
         localClickMonitor = nil
-        guard clickAnimationsEnabled else { return }
+        guard availability.permitsInputMonitoring, clickAnimationsEnabled else { return }
         globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) {
             [weak self] _ in
             Task { @MainActor in self?.showClickAnimation() }
@@ -942,7 +997,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
     private func showClickAnimation() {
-        guard clickAnimationsEnabled else { return }
+        guard availability.isEnabled, clickAnimationsEnabled else { return }
         let pointer = NSEvent.mouseLocation
         guard let display = displays.activeValues.first(where: {
             $0.window.frame.contains(pointer)
@@ -956,6 +1011,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func restoreDrawingPreferences() {
         let defaults = UserDefaults.standard
+        if defaults.object(forKey: "screenInkEnabled") != nil {
+            availability.setEnabled(defaults.bool(forKey: "screenInkEnabled"))
+        }
         if defaults.object(forKey: "inkColor") != nil {
             let saved = UInt32(clamping: defaults.integer(forKey: "inkColor"))
             if colors.contains(saved) { selectedColor = saved }

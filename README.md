@@ -16,7 +16,7 @@
 
 ScreenInk is a native macOS menu-bar app built with Swift, AppKit and Core Graphics. Use it to mark up code, explain an idea or point out details during a presentation. The project is MIT-licensed, and contributions are welcome.
 
-> **Early prototype · 0.15.1** — Build from source today. There is no published installer or notarized binary release yet. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
+> **Early prototype · 0.15.2** — Build from source today. There is no published installer or notarized binary release yet. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
 
 [Report a bug](https://github.com/developerkaushalkishor/mac-tools/issues/new/choose)
 
@@ -58,6 +58,7 @@ The purple fountain-pen icon represents drawing directly over a screen. ScreenIn
 - Drag handle with remembered position and a reset command.
 - Manual hide, automatic hiding after two seconds away, and top-center hover to reveal.
 - Persistent menu-bar icon for controls and quitting.
+- Master disable mode that hides every overlay and prevents top-edge reveal until re-enabled from the menu bar.
 - Normal mode for clicking underlying apps; drawing remains visible.
 - Offline operation with no accounts, analytics, backend or third-party package dependencies.
 

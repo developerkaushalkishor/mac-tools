@@ -49,6 +49,8 @@ See `STATUS.md` for the actual commands and desktop checks performed during setu
 - [ ] Move the toolbar, quit/relaunch, and verify saved position. Reset returns it to top-center.
 - [ ] Disconnect a display: toolbar is restored to a reachable display position.
 - [ ] The menu-bar nib icon has appropriate contrast on light and dark menu bars.
+- [ ] Disable ScreenInk from the toolbar; verify all overlays disappear, ordinary input works and top-edge hover cannot reveal the toolbar.
+- [ ] Enable ScreenInk from the menu-bar icon; verify existing annotations and the toolbar return. Restart once while disabled and verify the setting persists.
 
 Automated visibility regressions cover idle timeout, delayed edge reveal, pointer/drag protection, manual-hide edge rearming, explicit show and disabling automatic hiding.
 

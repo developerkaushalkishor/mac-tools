@@ -98,6 +98,21 @@ private func stroke(_ x: Double) -> Stroke {
     #expect(points == [InkPoint(x: 0, y: 0), InkPoint(x: 2, y: 0), InkPoint(x: 2.2, y: 0)])
 }
 
+@Test func disabledToolBlocksOverlaysEdgeRevealAndInputMonitoring() {
+    var availability = ToolAvailability()
+    #expect(availability.permitsOverlayPresentation)
+    #expect(availability.permitsEdgeReveal)
+    #expect(availability.permitsInputMonitoring)
+
+    availability.setEnabled(false)
+    #expect(!availability.permitsOverlayPresentation)
+    #expect(!availability.permitsEdgeReveal)
+    #expect(!availability.permitsInputMonitoring)
+
+    availability.setEnabled(true)
+    #expect(availability.isEnabled)
+}
+
 @Test func textReplacementIsOneUndoableOperationAndUsesTextBounds() {
     var store = StrokeStore()
     let original = Stroke(points: [InkPoint(x: 40, y: 50)], color: 0xBF5AF2,
