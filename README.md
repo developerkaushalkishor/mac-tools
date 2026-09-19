@@ -16,7 +16,13 @@
 
 ScreenInk is a native macOS menu-bar app built with Swift, AppKit and Core Graphics. Use it to mark up code, explain an idea or point out details during a presentation. The project is MIT-licensed, and contributions are welcome.
 
-> **Early prototype · 0.15.2** — Build from source today. There is no published installer or notarized binary release yet. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
+<p align="center">
+  <a href="https://github.com/developerkaushalkishor/mac-tools/releases/download/v0.15.2/ScreenInk-0.15.2-macOS-arm64.zip"><strong>Download for macOS (Apple Silicon)</strong></a>
+  ·
+  <a href="https://github.com/developerkaushalkishor/ScreenInk-Windows/releases/download/v0.1.0/ScreenInk-0.1.0-win-x64.zip">Download for Windows (x64)</a>
+</p>
+
+> **Early preview · 0.15.2** — An unsigned Apple Silicon ZIP is available from GitHub Releases. It is not Developer ID-signed or notarized, so macOS Gatekeeper can warn or block it. Developers can build from source using the steps below. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
 
 [Report a bug](https://github.com/developerkaushalkishor/mac-tools/issues/new/choose)
 
@@ -84,7 +90,9 @@ See the [installation guide](docs/INSTALLATION.md) for installing to Application
 
 ## Can a non-developer install it?
 
-Not through a simple trusted download yet. GitHub currently contains the source code, not a published notarized application release. A developer can clone and build ScreenInk with Xcode. A non-developer should wait for a GitHub Release containing a Developer ID-signed and Apple-notarized ZIP; otherwise macOS Gatekeeper may warn or block the app. Do not disable Gatekeeper globally to install ScreenInk.
+Yes, an Apple Silicon preview can be downloaded from the [v0.15.2 GitHub Release](https://github.com/developerkaushalkishor/mac-tools/releases/tag/v0.15.2). Extract the ZIP and move `ScreenInk.app` to Applications. The current binary is ad-hoc signed rather than Developer ID-signed and notarized, so Gatekeeper can warn or block it. Do not disable Gatekeeper globally. A trusted one-click public build still requires Apple Developer ID signing and notarization.
+
+Windows users can download the separate [ScreenInk for Windows preview](https://github.com/developerkaushalkishor/ScreenInk-Windows/releases/tag/v0.1.0), extract the ZIP and launch `ScreenInk.exe`.
 
 The release workflow and remaining requirements are documented in [RELEASING.md](docs/RELEASING.md). The app includes its own macOS icon, but an icon alone does not provide signing or notarization.
 
