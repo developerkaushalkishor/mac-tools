@@ -2,6 +2,13 @@ import Foundation
 import Testing
 @testable import InkCore
 
+@Test func toolbarWidthFitsSmallDisplaysAndQuickColorsRespondToSpace() {
+    #expect(ToolbarGeometry.fittedWidth(contentWidth: 1_200, screenWidth: 640) == 616)
+    #expect(ToolbarGeometry.fittedWidth(contentWidth: 560, screenWidth: 1_920) == 560)
+    #expect(!ToolbarGeometry.shouldShowQuickColors(screenWidth: 899))
+    #expect(ToolbarGeometry.shouldShowQuickColors(screenWidth: 900))
+}
+
 @Test func revealUsesOnlyToolbarWidthAtExactTopEdge() {
     let frame = CGRect(x: 0, y: 0, width: 1920, height: 1080)
     let visible = CGRect(x: 0, y: 0, width: 1920, height: 1055)

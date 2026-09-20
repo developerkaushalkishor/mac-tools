@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-09-19. ScreenInk is an early 0.15.2 prototype, distributed as source.
+Last reviewed: 2026-09-20. ScreenInk 0.15.3 is an early test candidate; the latest public preview remains 0.15.2.
 
 ## Repository
 
@@ -24,6 +24,7 @@ The repository is public at https://github.com/developerkaushalkishor/mac-tools.
 - Top-center icon toolbar, saved draggable placement, reset, manual hide, auto-hide and top-edge reveal.
 - Original purple macOS application icon bundled at standard and Retina sizes.
 - Persistent master enable/disable control with a menu-bar recovery path.
+- Responsive compact toolbar with a More popover; quick colors collapse on narrow displays while all controls remain reachable.
 
 See [usage](docs/USAGE.md) for the exact behavior and [roadmap](docs/PLAN.md) for future work.
 
@@ -31,7 +32,7 @@ See [usage](docs/USAGE.md) for the exact behavior and [roadmap](docs/PLAN.md) fo
 
 | Check | Recorded result |
 | --- | --- |
-| Swift Testing suite | 50 tests passed: master disable/enable gating, click-animation lifetime/history isolation, long-session fading-ink cleanup and point sampling, screenshot region/coordinate/PNG behavior, text alignment geometry and multi-text changes, typography catalog and multi-text font changes, immediate tool-cursor activation, start-aware board drawing containment, group selection/color/movement, contained board transforms, universal annotation transforms, board scope/region/history behavior, text placement/edit/history/hit-testing, pen-shape recognition, rounded shape geometry, shapes/constraints, history/fading, progressive laser decay/lifecycle, eraser hit-testing, toolbar visibility/geometry, display registry and native AppKit canvas checks |
+| Swift Testing suite | 51 tests passed: master disable/enable gating, click-animation lifetime/history isolation, long-session fading-ink cleanup and point sampling, screenshot region/coordinate/PNG behavior, text alignment geometry and multi-text changes, typography catalog and multi-text font changes, immediate tool-cursor activation, start-aware board drawing containment, group selection/color/movement, contained board transforms, universal annotation transforms, board scope/region/history behavior, text placement/edit/history/hit-testing, pen-shape recognition, rounded shape geometry, shapes/constraints, history/fading, progressive laser decay/lifecycle, eraser hit-testing, toolbar visibility/geometry, display registry and native AppKit canvas checks |
 | Release build | Passed with Xcode 27 / Swift 6.4 on Apple Silicon, macOS 26.6.2 |
 | Bundle signature | Local ad-hoc signature verification passed |
 | Fresh GitHub clone at `217e1a7` | Doctor, seven tests, release build and signature verification passed from a separate temporary checkout on the same Mac |
@@ -43,6 +44,8 @@ See [usage](docs/USAGE.md) for the exact behavior and [roadmap](docs/PLAN.md) fo
 | macOS 14 minimum target / Intel | Declared target or potential build support, not independently validated |
 
 Automated model tests do not establish desktop compatibility. Use the [manual checklist](docs/TESTING.md) when contributing verification results.
+
+Version 0.15.3 adds the responsive toolbar layout. The complete suite now reports 51 tests: 17 AppKit canvas tests and 34 core tests, including narrow-display width and quick-color layout rules. The release build and ad-hoc signature verification pass; hands-on More-popover and cross-display layout confirmation is pending user testing.
 
 ## Current limitations and next work
 

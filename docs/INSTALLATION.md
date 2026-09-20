@@ -2,7 +2,7 @@
 
 ## For non-developers
 
-There is no published notarized GitHub Release yet, so the repository's green **Code → Download ZIP** button downloads source code rather than an installable application. Wait for a release that provides a `ScreenInk-<version>-macOS-<architecture>.zip` file plus its `.sha256` checksum. That public artifact must be Developer ID-signed, Apple-notarized and verified on a clean Mac before this guide recommends installing it.
+An unsigned Apple Silicon preview is available from [GitHub Releases](https://github.com/developerkaushalkishor/mac-tools/releases). Download the versioned `ScreenInk-<version>-macOS-arm64.zip` file rather than GitHub's green **Code → Download ZIP**, which contains source code. The preview is ad-hoc signed and is not Apple-notarized, so Gatekeeper can warn or block it. A trusted public build still requires Developer ID signing, notarization and clean-Mac verification.
 
 The steps below are currently for developers or users comfortable building from source. Do not disable Gatekeeper globally or run quarantine-removal commands copied from issue comments.
 

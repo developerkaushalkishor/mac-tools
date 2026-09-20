@@ -48,6 +48,8 @@ See `STATUS.md` for the actual commands and desktop checks performed during setu
 - [ ] Turn auto-hide off: toolbar stays visible; manual hide and edge reveal still work.
 - [ ] Move the toolbar, quit/relaunch, and verify saved position. Reset returns it to top-center.
 - [ ] Disconnect a display: toolbar is restored to a reachable display position.
+- [ ] Move the toolbar between a wide and narrow display: quick colors collapse on the narrow display, More exposes every secondary control, and the panel remains fully inside both screens.
+- [ ] Keep the pointer over More and each nested control for more than two seconds: neither the toolbar nor the More popover auto-hides during interaction.
 - [ ] The menu-bar nib icon has appropriate contrast on light and dark menu bars.
 - [ ] Disable ScreenInk from the toolbar; verify all overlays disappear, ordinary input works and top-edge hover cannot reveal the toolbar.
 - [ ] Enable ScreenInk from the menu-bar icon; verify existing annotations and the toolbar return. Restart once while disabled and verify the setting persists.

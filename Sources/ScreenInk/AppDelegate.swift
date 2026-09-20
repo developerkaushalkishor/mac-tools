@@ -33,12 +33,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var clickAnimationButton: NSButton!
     private var inkVisibilityButton: NSButton!
     private var boardButton: NSButton!
+    private var moreButton: NSButton!
+    private weak var toolbarRow: NSStackView?
     private let palettePopover = NSPopover()
     private let shapePopover = NSPopover()
     private let boardPopover = NSPopover()
     private let fontPopover = NSPopover()
     private let textAlignmentPopover = NSPopover()
     private let screenshotPopover = NSPopover()
+    private let morePopover = NSPopover()
     private var autoHideButton: NSButton!
     private var autoHideItem: NSMenuItem!
     private var availabilityItem: NSMenuItem!
@@ -121,6 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         background.layer?.borderWidth = 1
         background.layer?.borderColor = NSColor.white.withAlphaComponent(0.18).cgColor
         let row = NSStackView()
+        toolbarRow = row
         row.spacing = 4
         row.alignment = .centerY
         row.translatesAutoresizingMaskIntoConstraints = false
@@ -136,7 +140,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         handle.setAccessibilityLabel("Move toolbar")
         handle.widthAnchor.constraint(equalToConstant: 22).isActive = true
         handle.heightAnchor.constraint(equalToConstant: 34).isActive = true
-        handle.didDrag = { [weak self] in self?.savePosition() }
+        handle.didDrag = { [weak self] in
+            guard let self else { return }
+            if let screen = self.toolbar.screen { self.updateToolbarLayout(for: screen) }
+            self.savePosition()
+        }
         row.addArrangedSubview(handle)
         normalButton = icon("cursorarrow", "Normal mode — interact with apps (Escape or right-click)",
             #selector(selectNormal))
@@ -150,13 +158,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         row.addArrangedSubview(highlighterButton)
         eraserButton = icon("eraser", "Whole-stroke eraser", #selector(selectEraser))
         row.addArrangedSubview(eraserButton)
-        laserButton = icon("laser.burst", "Laser pointer — progressive fading trail", #selector(selectLaser))
-        row.addArrangedSubview(laserButton)
         shapeButton = icon("square.on.circle", "Shapes: line, arrow, rectangle, ellipse, diamond", #selector(showShapes(_:)))
         row.addArrangedSubview(shapeButton)
         createShapePicker()
-        textButton = icon("textformat", "Text — click canvas to type", #selector(selectText))
-        row.addArrangedSubview(textButton)
         divider(in: row)
         let names = ["Purple", "Red", "Yellow", "Green", "Blue", "White"]
         for (index, hex) in colors.enumerated() {
@@ -181,46 +185,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         createPalette()
         divider(in: row)
         row.addArrangedSubview(icon("lineweight", "Pen width: Medium — click to cycle", #selector(changeWidth(_:))))
-        fontSizeButton = icon("textformat.size",
-            "Text size: \(Int([20, 28, 40, 56][fontSizeIndex])) pt — click to cycle",
-            #selector(changeFontSize(_:)))
-        row.addArrangedSubview(fontSizeButton)
-        fontButton = icon("character.cursor.ibeam", "Choose text font", #selector(showFonts(_:)))
-        row.addArrangedSubview(fontButton)
-        createFontPicker()
-        textAlignmentButton = icon("text.alignleft", "Text alignment", #selector(showTextAlignment(_:)))
-        row.addArrangedSubview(textAlignmentButton)
-        createTextAlignmentPicker()
         row.addArrangedSubview(icon("arrow.uturn.backward", "Undo on toolbar display", #selector(undo)))
         row.addArrangedSubview(icon("arrow.uturn.forward", "Redo on toolbar display", #selector(redo)))
         row.addArrangedSubview(icon("trash", "Clear drawing on toolbar display", #selector(clear)))
         divider(in: row)
-        fadingButton = icon("timer", "Toggle fading ink", #selector(toggleFadingInk))
-        row.addArrangedSubview(fadingButton)
-        haloButton = icon("cursorarrow.rays", "Toggle cursor halo", #selector(toggleCursorHalo))
-        row.addArrangedSubview(haloButton)
-        clickAnimationButton = icon("cursorarrow.click.2", "Toggle click animations",
-            #selector(toggleClickAnimations))
-        row.addArrangedSubview(clickAnimationButton)
-        inkVisibilityButton = icon("eye.slash", "Show / hide ink", #selector(toggleInkVisibility))
-        row.addArrangedSubview(inkVisibilityButton)
-        boardButton = icon("rectangle.inset.filled", "Background: Screen / Whiteboard / Blackboard",
-            #selector(showBoards(_:)))
-        boardButton.setAccessibilityValue("Screen")
-        row.addArrangedSubview(boardButton)
-        createBoardPicker()
-        screenshotButton = icon("camera.viewfinder", "Capture screenshot", #selector(showScreenshots(_:)))
-        row.addArrangedSubview(screenshotButton)
-        createScreenshotPicker()
-        divider(in: row)
-        autoHideButton = icon("eye", "Toggle auto-hide (2 seconds)", #selector(toggleAutoHide))
-        row.addArrangedSubview(autoHideButton)
-        row.addArrangedSubview(icon("power", "Disable ScreenInk — re-enable from the menu bar",
-            #selector(toggleToolAvailability)))
+        moreButton = icon("ellipsis.circle", "More tools and presentation controls", #selector(showMore(_:)))
+        row.addArrangedSubview(moreButton)
+        createMorePicker()
         row.addArrangedSubview(icon("chevron.up", "Hide toolbar — hover at top-center to show", #selector(hideToolbar)))
         toolbar.contentView = background
-        background.layoutSubtreeIfNeeded()
-        toolbar.setContentSize(NSSize(width: row.fittingSize.width + 20, height: 54))
+        updateToolbarLayout(for: screen)
         restorePosition(on: screen)
         updateAutoHideControls()
         updateToolControls()
@@ -238,6 +212,62 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         line.widthAnchor.constraint(equalToConstant: 1).isActive = true
         line.heightAnchor.constraint(equalToConstant: 22).isActive = true
         row.addArrangedSubview(line)
+    }
+
+    private func createMorePicker() {
+        let controller = NSViewController()
+        let grid = NSGridView()
+        grid.rowSpacing = 6
+        grid.columnSpacing = 6
+
+        laserButton = icon("laser.burst", "Laser pointer — progressive fading trail", #selector(selectLaser))
+        textButton = icon("textformat", "Text — click canvas to type", #selector(selectText))
+        fontSizeButton = icon("textformat.size",
+            "Text size: \(Int([20, 28, 40, 56][fontSizeIndex])) pt — click to cycle",
+            #selector(changeFontSize(_:)))
+        fontButton = icon("character.cursor.ibeam", "Choose text font", #selector(showFonts(_:)))
+        textAlignmentButton = icon("text.alignleft", "Text alignment", #selector(showTextAlignment(_:)))
+        grid.addRow(with: [laserButton, textButton, fontSizeButton, fontButton, textAlignmentButton])
+
+        fadingButton = icon("timer", "Toggle fading ink", #selector(toggleFadingInk))
+        haloButton = icon("cursorarrow.rays", "Toggle cursor halo", #selector(toggleCursorHalo))
+        clickAnimationButton = icon("cursorarrow.click.2", "Toggle click animations",
+            #selector(toggleClickAnimations))
+        inkVisibilityButton = icon("eye.slash", "Show / hide ink", #selector(toggleInkVisibility))
+        boardButton = icon("rectangle.inset.filled", "Background: Screen / Whiteboard / Blackboard",
+            #selector(showBoards(_:)))
+        boardButton.setAccessibilityValue("Screen")
+        grid.addRow(with: [fadingButton, haloButton, clickAnimationButton, inkVisibilityButton, boardButton])
+
+        screenshotButton = icon("camera.viewfinder", "Capture screenshot", #selector(showScreenshots(_:)))
+        autoHideButton = icon("eye", "Toggle auto-hide (2 seconds)", #selector(toggleAutoHide))
+        let powerButton = icon("power", "Disable ScreenInk — re-enable from the menu bar",
+            #selector(toggleToolAvailability))
+        grid.addRow(with: [screenshotButton, autoHideButton, powerButton])
+
+        createFontPicker()
+        createTextAlignmentPicker()
+        createBoardPicker()
+        createScreenshotPicker()
+        grid.translatesAutoresizingMaskIntoConstraints = false
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 214, height: 142))
+        container.addSubview(grid)
+        NSLayoutConstraint.activate([
+            grid.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            grid.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        controller.view = container
+        controller.preferredContentSize = container.frame.size
+        morePopover.contentViewController = controller
+        morePopover.behavior = .transient
+    }
+
+    @objc private func showMore(_ sender: NSButton) {
+        if morePopover.isShown {
+            morePopover.close()
+        } else {
+            morePopover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+        }
     }
 
     private func createMenu() {
@@ -600,6 +630,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let wasVisible = visibility.isVisible
         let popoverActive = palettePopover.isShown || shapePopover.isShown || boardPopover.isShown
             || fontPopover.isShown || textAlignmentPopover.isShown || screenshotPopover.isShown
+            || morePopover.isShown
         visibility.update(now: now,
             toolbarHovered: toolbar.frame.insetBy(dx: -8, dy: -8).contains(pointer) || popoverActive,
             topEdgeHovered: atTopEdge(pointer),
@@ -610,6 +641,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             var moved = false
             if let screen = topEdgeScreen(pointer), NSEvent.pressedMouseButtons == 0,
                screen.inkDisplayID != toolbar.screen?.inkDisplayID {
+                updateToolbarLayout(for: screen)
                 toolbar.setFrameOrigin(centeredOrigin(on: screen))
                 savePosition()
                 updateBoardControls()
@@ -680,7 +712,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         } else {
             setDrawing(false)
             [palettePopover, shapePopover, boardPopover, fontPopover,
-                textAlignmentPopover, screenshotPopover].forEach { $0.close() }
+                textAlignmentPopover, screenshotPopover, morePopover].forEach { $0.close() }
             visibility.hide(topEdgeHovered: false)
             toolbar.contentView?.layer?.removeAnimation(forKey: "toolbarRevealSlide")
             toolbar.orderOut(nil)
@@ -1053,7 +1085,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NSPoint(x: screen.visibleFrame.midX - toolbar.frame.width / 2,
             y: screen.visibleFrame.maxY - toolbar.frame.height - 12)
     }
+
+    private func updateToolbarLayout(for screen: NSScreen) {
+        let showQuickColors = ToolbarGeometry.shouldShowQuickColors(screenWidth: screen.visibleFrame.width)
+        for swatch in swatches { swatch.isHidden = !showQuickColors }
+        guard let row = toolbarRow, let background = toolbar.contentView else { return }
+        background.layoutSubtreeIfNeeded()
+        let contentWidth = row.fittingSize.width + 20
+        let width = ToolbarGeometry.fittedWidth(contentWidth: contentWidth,
+            screenWidth: screen.visibleFrame.width)
+        toolbar.setContentSize(NSSize(width: width, height: 54))
+        background.layoutSubtreeIfNeeded()
+    }
+
     private func restorePosition(on fallback: NSScreen) {
+        updateToolbarLayout(for: fallback)
         let defaults = UserDefaults.standard
         var origin = centeredOrigin(on: fallback)
         if defaults.object(forKey: "toolbarX") != nil {
@@ -1075,6 +1121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     @objc private func resetPosition() {
         guard let screen = NSScreen.screens.first else { return }
+        updateToolbarLayout(for: screen)
         toolbar.setFrameOrigin(centeredOrigin(on: screen))
         savePosition()
         showToolbar()
@@ -1083,6 +1130,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         setDrawing(false)
         reconcileDisplays()
         guard let screen = NSScreen.screens.first else { return }
+        updateToolbarLayout(for: screen)
         restorePosition(on: screen)
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

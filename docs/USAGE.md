@@ -29,9 +29,12 @@ ScreenInk runs in the macOS menu bar and starts in normal mouse mode. Its toolba
 | Eye | Toggle toolbar auto-hide; cyan means enabled |
 | Power | Disable ScreenInk completely; use the menu-bar icon to enable it again |
 | Up-chevron | Hide the toolbar immediately and return to normal input |
+| Ellipsis in a circle | Open More tools: Laser, Text settings, presentation effects, boards, screenshots, auto-hide and disable |
 | Menu-bar pen-and-ink icon | Show/Hide Toolbar, Reset Toolbar to Top Center, Auto-hide Toolbar, Toggle Drawing, Clear Drawing and Quit ScreenInk |
 
 The toolbar uses icon tooltips and accessibility labels to explain actions.
+
+The toolbar adapts to the display that contains it. On narrower displays the six quick-color circles collapse automatically; all 24 colors remain available through the Palette button. Secondary controls stay reachable through the **More** popover, so the toolbar does not extend beyond the screen edge.
 
 While drawing mode is active, the pointer also identifies the selected tool. Pen, Highlighter, Eraser, Laser, Select and each shape use their own symbol cursor with a centered action point; Text uses the standard macOS I-beam. Returning to Cursor/normal mode restores the cursor behavior of the underlying app.
 
