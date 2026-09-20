@@ -17,12 +17,12 @@
 ScreenInk is a native macOS menu-bar app built with Swift, AppKit and Core Graphics. Use it to mark up code, explain an idea or point out details during a presentation. The project is MIT-licensed, and contributions are welcome.
 
 <p align="center">
-  <a href="https://github.com/developerkaushalkishor/mac-tools/releases/download/v0.15.2/ScreenInk-0.15.2-macOS-arm64.zip"><strong>Download for macOS (Apple Silicon)</strong></a>
+  <a href="https://github.com/developerkaushalkishor/mac-tools/releases/download/v0.15.3/ScreenInk-0.15.3-macOS-arm64.zip"><strong>Download for macOS (Apple Silicon)</strong></a>
   ·
-  <a href="https://github.com/developerkaushalkishor/ScreenInk-Windows/releases/download/v0.1.0/ScreenInk-0.1.0-win-x64.zip">Download for Windows (x64)</a>
+  <a href="https://github.com/developerkaushalkishor/ScreenInk-Windows/releases/download/v0.2.0/ScreenInk-0.2.0-win-x64.zip">Download for Windows (x64)</a>
 </p>
 
-> **Early preview · 0.15.2** — An unsigned Apple Silicon ZIP is available from GitHub Releases. It is not Developer ID-signed or notarized, so macOS Gatekeeper can warn or block it. Developers can build from source using the steps below. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
+> **Early preview · 0.15.3** — An unsigned Apple Silicon ZIP is available from GitHub Releases. It is not Developer ID-signed or notarized, so macOS Gatekeeper can warn or block it. Developers can build from source using the steps below. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
 
 [Report a bug](https://github.com/developerkaushalkishor/mac-tools/issues/new/choose)
 
@@ -61,6 +61,7 @@ The purple fountain-pen icon represents drawing directly over a screen. ScreenIn
 - Experimental full-display and drag-region screenshots with Retina PNG save or clipboard copy; permission handling still needs a reliable hands-on fix.
 - Undo, redo and clear; clearing a drawing can also be undone.
 - Compact icon toolbar, initially centered below the macOS menu bar.
+- Responsive More popover keeps every secondary control reachable on narrow displays; quick colors collapse automatically when space is limited.
 - Drag handle with remembered position and a reset command.
 - Manual hide, automatic hiding after two seconds away, and top-center hover to reveal.
 - Persistent menu-bar icon for controls and quitting.
@@ -90,9 +91,9 @@ See the [installation guide](docs/INSTALLATION.md) for installing to Application
 
 ## Can a non-developer install it?
 
-Yes, an Apple Silicon preview can be downloaded from the [v0.15.2 GitHub Release](https://github.com/developerkaushalkishor/mac-tools/releases/tag/v0.15.2). Extract the ZIP and move `ScreenInk.app` to Applications. The current binary is ad-hoc signed rather than Developer ID-signed and notarized, so Gatekeeper can warn or block it. Do not disable Gatekeeper globally. A trusted one-click public build still requires Apple Developer ID signing and notarization.
+Yes, an Apple Silicon preview can be downloaded from the [v0.15.3 GitHub Release](https://github.com/developerkaushalkishor/mac-tools/releases/tag/v0.15.3). Extract the ZIP and move `ScreenInk.app` to Applications. The current binary is ad-hoc signed rather than Developer ID-signed and notarized, so Gatekeeper can warn or block it. Do not disable Gatekeeper globally. A trusted one-click public build still requires Apple Developer ID signing and notarization.
 
-Windows users can download the separate [ScreenInk for Windows preview](https://github.com/developerkaushalkishor/ScreenInk-Windows/releases/tag/v0.1.0), extract the ZIP and launch `ScreenInk.exe`.
+Windows users can download the separate [ScreenInk for Windows preview](https://github.com/developerkaushalkishor/ScreenInk-Windows/releases/tag/v0.2.0), extract the ZIP and launch `ScreenInk.exe`.
 
 The release workflow and remaining requirements are documented in [RELEASING.md](docs/RELEASING.md). The app includes its own macOS icon, but an icon alone does not provide signing or notarization.
 

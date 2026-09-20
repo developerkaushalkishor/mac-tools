@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-09-20. ScreenInk 0.15.3 is an early test candidate; the latest public preview remains 0.15.2.
+Last reviewed: 2026-09-20. ScreenInk 0.15.3 is an early public preview.
 
 ## Repository
 
