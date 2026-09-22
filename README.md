@@ -19,7 +19,7 @@ ScreenInk is a native macOS menu-bar app built with Swift, AppKit and Core Graph
 <p align="center">
   <a href="https://github.com/developerkaushalkishor/mac-tools/releases/download/v0.15.3/ScreenInk-0.15.3-macOS-arm64.zip"><strong>Download for macOS (Apple Silicon)</strong></a>
   ·
-  <a href="https://github.com/developerkaushalkishor/ScreenInk-Windows/releases/download/v0.2.0/ScreenInk-0.2.0-win-x64.zip">Download for Windows (x64)</a>
+  <a href="https://github.com/developerkaushalkishor/ScreenInk-Windows/releases/download/v0.2.1/ScreenInk-0.2.1-win-x64.zip">Download for Windows (x64)</a>
 </p>
 
 > **Early preview · 0.15.3** — An unsigned Apple Silicon ZIP is available from GitHub Releases. It is not Developer ID-signed or notarized, so macOS Gatekeeper can warn or block it. Developers can build from source using the steps below. Drawing canvases are created on every connected display; see [known limitations](#known-limitations).
@@ -93,7 +93,7 @@ See the [installation guide](docs/INSTALLATION.md) for installing to Application
 
 Yes, an Apple Silicon preview can be downloaded from the [v0.15.3 GitHub Release](https://github.com/developerkaushalkishor/mac-tools/releases/tag/v0.15.3). Extract the ZIP and move `ScreenInk.app` to Applications. The current binary is ad-hoc signed rather than Developer ID-signed and notarized, so Gatekeeper can warn or block it. Do not disable Gatekeeper globally. A trusted one-click public build still requires Apple Developer ID signing and notarization.
 
-Windows users can download the separate [ScreenInk for Windows preview](https://github.com/developerkaushalkishor/ScreenInk-Windows/releases/tag/v0.2.0), extract the ZIP and launch `ScreenInk.exe`.
+Windows users can download the separate [ScreenInk for Windows preview](https://github.com/developerkaushalkishor/ScreenInk-Windows/releases/tag/v0.2.1), extract the ZIP and launch `ScreenInk.exe`. The small package requires the .NET 8 Desktop Runtime; the release also provides a larger offline package with the runtime included.
 
 The release workflow and remaining requirements are documented in [RELEASING.md](docs/RELEASING.md). The app includes its own macOS icon, but an icon alone does not provide signing or notarization.
 
